@@ -1,12 +1,14 @@
-# P-B17 · lvl-a · topic ai · role=custom-llm-smoke
+# SUPERSEDED 2026-07-27 — use b17-lvl-a-ai-action-smoke + 116-b17-ai-action-smoke-run.sh
+# P-B17 · lvl-a · topic ai · role=custom-llm-smoke (duplicate — do not import)
 # Custom provider: B17 Lab AI Gateway → http://192.168.11.110:4000/v1 (passthrough)
 # Model: b17-lab-smoke (lab OpenAI-compatible stub via LiteLLM)
 type: workflow
 id: wf_b17LvlAAiCustomLlm
 alias: b17-lvl-a-ai-custom-llm
 definition:
-  title: "b17 · lvl-a · ai · custom-llm"
+  title: "b17 · lvl-a · ai · custom-llm · SUPERSEDED"
   description: >
+    SUPERSEDED: use alias b17-lvl-a-ai-action-smoke. Kept only to avoid parallel invent.
     P-B17 product-test artifact. Level: lvl-a. Topic: T-AI. Role: custom LLM smoke.
     Calls ai.action against org custom provider (passthrough) pointing at lab AI Gateway.
     Expect assistant content marker PONG-B17-LAB. Org: B17 Lab · Workspace: b17-ai.
