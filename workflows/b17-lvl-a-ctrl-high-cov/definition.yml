@@ -1,0 +1,75 @@
+# b17 · lvl-a · ctrl · high-cov
+# legacy: wf_b17aL0HighCov01
+type: workflow
+id: wf_b17LvlACtrlHighCov
+alias: b17-lvl-a-ctrl-high-cov
+definition:
+  title: "b17 · lvl-a · ctrl · high-cov"
+  description: >
+    P-B17 product-test artifact. Level: lvl-a (machine). Topic: T-CTRL. Role: high-cov. High-coverage combined pack. Org: B17 Lab · Workspace: b17-ctrl. Naming: docs/15-b17-product-test/01-naming-standard.md. Legacy folder: wf_b17aL0HighCov01.
+  entrypoint:
+    ref: seed
+  actions:
+    - ref: seed
+      action: core.transform.reshape
+      args:
+        value:
+          items: [1, 2, 3, 4, 5]
+          tag: B17A-L0
+    - ref: filtered
+      action: core.transform.filter
+      depends_on: [seed]
+      args:
+        items: ${{ ACTIONS.seed.result.items }}
+        python_lambda: "lambda x: x >= 3"
+    - ref: gate
+      action: core.require
+      depends_on: [filtered]
+      args:
+        conditions: true
+        require_all: true
+        raise_error: true
+    - ref: scripted
+      action: core.script.run_python
+      depends_on: [filtered, gate]
+      args:
+        script: |
+          def main(items, tag):
+              return {"count": len(items), "tag": tag, "sum": sum(items)}
+        inputs:
+          items: ${{ ACTIONS.filtered.result }}
+          tag: ${{ ACTIONS.seed.result.tag }}
+        allow_network: false
+        timeout_seconds: 60
+    # Custom UDF tools.b17_lab.ping is asserted by harness registry inventory.
+    # Do not embed it here while local+remote origins both publish the same key
+    # (Ambiguous action). Prefer remote-only or registry_lock in a later wave.
+    - ref: pack
+      action: core.transform.reshape
+      depends_on: [scripted]
+      args:
+        value:
+          filtered: ${{ ACTIONS.filtered.result }}
+          scripted: ${{ ACTIONS.scripted.result }}
+          custom_udf: tools.b17_lab.ping
+  returns: ${{ ACTIONS.pack.result }}
+layout:
+  trigger:
+    x: 0
+    y: 0
+  actions:
+    - ref: seed
+      x: 0
+      y: 120
+    - ref: filtered
+      x: 0
+      y: 240
+    - ref: gate
+      x: 0
+      y: 360
+    - ref: scripted
+      x: 0
+      y: 480
+    - ref: pack
+      x: 0
+      y: 600

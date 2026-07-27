@@ -1,0 +1,128 @@
+# P-B17 · lvl-a · topic trig · role=status-changed-handler
+# Case-trigger panel: ON (event_types=status_changed)
+# Naming: docs/15-b17-product-test/01-naming-standard.md · DO-02-093 · DO-02-097
+type: workflow
+id: wf_b17LvlATrigStatusChanged
+alias: b17-lvl-a-trig-status-changed
+definition:
+  title: "b17 · lvl-a · trig · status-changed · needs-trigger"
+  description: >
+    P-B17 product-test artifact. Level: lvl-a. Topic: T-TRIG. Role: status-changed handler.
+    Case-trigger PANEL ON: event_types=[status_changed], tag_filters=[].
+    Workflow-side filter: only act when Case has topic-trig (get_case).
+    On match: add tag trig-status-handled + audit comment.
+    RUN MODE: needs-trigger — bare Manual Run WILL FAIL without case_id.
+    Org: B17 Lab · Workspace: b17-trig. Wave: DO-02-099 · re-seed: DO-02-098.
+  entrypoint:
+    ref: normalize
+    expects: {}
+  actions:
+    - ref: normalize
+      action: core.script.run_python
+      args:
+        allow_network: false
+        timeout_seconds: 30
+        inputs:
+          case_id: ${{ TRIGGER.case_id }}
+          event_type: ${{ TRIGGER.event_type }}
+          type: ${{ TRIGGER.type }}
+          status: ${{ TRIGGER.status }}
+          old_status: ${{ TRIGGER.old_status }}
+          new_status: ${{ TRIGGER.new_status }}
+        script: |
+          def main(case_id, event_type, type, status, old_status, new_status):
+              cid = str(case_id or "").strip()
+              et = str(event_type or type or "status_changed")
+              return {
+                  "case_id": cid,
+                  "event_type": et,
+                  "status": str(status or ""),
+                  "old_status": str(old_status or ""),
+                  "new_status": str(new_status or status or ""),
+              }
+    - ref: require_case
+      action: core.require
+      depends_on: [normalize]
+      args:
+        conditions: ${{ FN.length(ACTIONS.normalize.result.case_id) > 0 }}
+        require_all: true
+        raise_error: true
+    - ref: load_case
+      action: core.cases.get_case
+      depends_on: [require_case]
+      args:
+        case_id: ${{ ACTIONS.normalize.result.case_id }}
+    - ref: decide
+      action: core.script.run_python
+      depends_on: [load_case]
+      args:
+        allow_network: false
+        timeout_seconds: 30
+        inputs:
+          case: ${{ ACTIONS.load_case.result }}
+          case_id: ${{ ACTIONS.normalize.result.case_id }}
+          event_type: ${{ ACTIONS.normalize.result.event_type }}
+          old_status: ${{ ACTIONS.normalize.result.old_status }}
+          new_status: ${{ ACTIONS.normalize.result.new_status }}
+        script: |
+          def main(case, case_id, event_type, old_status, new_status):
+              tags = []
+              for t in (case or {}).get("tags") or []:
+                  if isinstance(t, dict):
+                      tags.append(str(t.get("ref") or t.get("name") or ""))
+                  else:
+                      tags.append(str(t))
+              matched = "topic-trig" in tags
+              return {
+                  "matched_s": "yes" if matched else "no",
+                  "tags": tags,
+                  "case_id": case_id,
+                  "event_type": event_type,
+                  "audit": (
+                      f"P-B17 T-TRIG status_changed MATCHED "
+                      f"{old_status or '?'}→{new_status or '?'} tags={tags}"
+                      if matched
+                      else (
+                          f"P-B17 T-TRIG status_changed SKIPPED (no topic-trig) "
+                          f"{old_status or '?'}→{new_status or '?'} tags={tags}"
+                      )
+                  ),
+              }
+    - ref: mark_handled
+      action: core.cases.add_case_tag
+      depends_on: [decide]
+      run_if: ${{ FN.is_equal(ACTIONS.decide.result.matched_s, "yes") }}
+      args:
+        case_id: ${{ ACTIONS.normalize.result.case_id }}
+        tag: trig-status-handled
+        create_if_missing: true
+    - ref: audit
+      action: core.cases.create_comment
+      depends_on: [decide]
+      args:
+        case_id: ${{ ACTIONS.normalize.result.case_id }}
+        content: ${{ ACTIONS.decide.result.audit }}
+    - ref: pack
+      action: core.transform.reshape
+      depends_on: [audit]
+      args:
+        value:
+          plan: P-B17
+          level: lvl-a
+          topic: trig
+          role: status-changed-handler
+          case_id: ${{ ACTIONS.normalize.result.case_id }}
+          event_type: ${{ ACTIONS.normalize.result.event_type }}
+          matched_s: ${{ ACTIONS.decide.result.matched_s }}
+          handled: ${{ FN.is_equal(ACTIONS.decide.result.matched_s, "yes") }}
+  returns: ${{ ACTIONS.pack.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: normalize, x: 0, y: 120 }
+    - { ref: require_case, x: 0, y: 240 }
+    - { ref: load_case, x: 0, y: 360 }
+    - { ref: decide, x: 0, y: 480 }
+    - { ref: mark_handled, x: -120, y: 600 }
+    - { ref: audit, x: 120, y: 600 }
+    - { ref: pack, x: 120, y: 720 }

@@ -1,0 +1,27 @@
+# SUPERSEDED by workflows/b17-lvl-a-reg-ping (alias b17-lvl-a-reg-ping).
+# Keep folder for history only — do not import as ACTIVE duplicate.
+# UDF: tools.b17_lab.ping from kopal-integrations-b17 (PE-03-003 · DO-02-079).
+type: workflow
+id: wf_2mhoBq8oEFmyiwO9qfBaQH
+alias: b17a-l0-custom-registry-ping
+definition:
+  title: B17A-L0 custom registry ping (superseded)
+  description: >
+    SUPERSEDED by b17-lvl-a-reg-ping. Historical L0 ping for tools.b17_lab.ping.
+    Do not keep both ACTIVE in the same workspace (duplicate).
+  entrypoint:
+    ref: ping
+  actions:
+    - ref: ping
+      action: tools.b17_lab.ping
+      args:
+        message: "SUPERSEDED — use b17-lvl-a-reg-ping"
+  returns: "${{ ACTIONS.ping.result }}"
+layout:
+  trigger:
+    x: 0
+    y: 0
+  actions:
+    - ref: ping
+      x: 0
+      y: 150

@@ -1,0 +1,150 @@
+# P-B17 · lvl-a · topic table · role=rest (standalone) · COVERAGE-100 Wave TBL
+# Covers remaining core.table.* beyond ioc-roundtrip / link-case
+type: workflow
+id: wf_b17LvlATableRest
+alias: b17-lvl-a-table-rest
+definition:
+  title: "b17 · lvl-a · table · rest"
+  description: >
+    P-B17 coverage pack Wave TBL. Exercises remaining core.table.*:
+    list_tables · get_table_metadata · insert_rows · update_row · delete_row ·
+    is_in · lookup_many · search_rows · download.
+    Org: B17 Lab · Workspace: b17-table.
+    SoT: kopal-other-b17/docs/COVERAGE-100.md · DO-02-104.
+  entrypoint:
+    ref: make_name
+  actions:
+    - ref: make_name
+      action: core.script.run_python
+      args:
+        allow_network: false
+        timeout_seconds: 15
+        inputs: {}
+        script: |
+          def main():
+              import time
+              suffix = str(int(time.time()))
+              return {
+                  "table": f"b17_lvl_a_table_rest_{suffix}",
+                  "host_a": f"b17-rest-a-{suffix}",
+                  "host_b": f"b17-rest-b-{suffix}",
+                  "host_c": f"b17-rest-c-{suffix}",
+                  "owner": "secops",
+                  "marker": f"b17-table-rest-{suffix}",
+              }
+    - ref: create_table
+      action: core.table.create_table
+      depends_on: [make_name]
+      args:
+        name: ${{ ACTIONS.make_name.result.table }}
+        raise_on_duplicate: false
+        columns:
+          - { name: hostname, type: TEXT, nullable: false }
+          - { name: owner, type: TEXT, nullable: true }
+          - { name: note, type: TEXT, nullable: true }
+    - ref: list_tables
+      action: core.table.list_tables
+      depends_on: [create_table]
+    - ref: meta
+      action: core.table.get_table_metadata
+      depends_on: [create_table]
+      args:
+        name: ${{ ACTIONS.make_name.result.table }}
+    - ref: insert_one
+      action: core.table.insert_row
+      depends_on: [meta]
+      args:
+        table: ${{ ACTIONS.make_name.result.table }}
+        upsert: false
+        row_data:
+          hostname: ${{ ACTIONS.make_name.result.host_a }}
+          owner: ${{ ACTIONS.make_name.result.owner }}
+          note: ${{ ACTIONS.make_name.result.marker }}
+    - ref: insert_many
+      action: core.table.insert_rows
+      depends_on: [insert_one]
+      args:
+        table: ${{ ACTIONS.make_name.result.table }}
+        upsert: false
+        rows_data:
+          - hostname: ${{ ACTIONS.make_name.result.host_b }}
+            owner: ${{ ACTIONS.make_name.result.owner }}
+            note: batch
+          - hostname: ${{ ACTIONS.make_name.result.host_c }}
+            owner: platform
+            note: batch
+    - ref: is_in
+      action: core.table.is_in
+      depends_on: [insert_many]
+      args:
+        table: ${{ ACTIONS.make_name.result.table }}
+        column: hostname
+        value: ${{ ACTIONS.make_name.result.host_a }}
+    - ref: lookup_many
+      action: core.table.lookup_many
+      depends_on: [insert_many]
+      args:
+        table: ${{ ACTIONS.make_name.result.table }}
+        column: owner
+        value: ${{ ACTIONS.make_name.result.owner }}
+        limit: 25
+    - ref: search
+      action: core.table.search_rows
+      depends_on: [insert_many]
+      args:
+        table: ${{ ACTIONS.make_name.result.table }}
+        search_term: ${{ ACTIONS.make_name.result.marker }}
+        limit: 50
+    - ref: update_row
+      action: core.table.update_row
+      depends_on: [insert_one]
+      args:
+        table: ${{ ACTIONS.make_name.result.table }}
+        row_id: ${{ ACTIONS.insert_one.result.id }}
+        row_data:
+          owner: incident-response
+          note: updated
+    - ref: download
+      action: core.table.download
+      depends_on: [update_row, lookup_many, search, is_in]
+      args:
+        name: ${{ ACTIONS.make_name.result.table }}
+        format: csv
+        limit: 1000
+    - ref: delete_row
+      action: core.table.delete_row
+      depends_on: [download]
+      args:
+        table: ${{ ACTIONS.make_name.result.table }}
+        row_id: ${{ ACTIONS.insert_one.result.id }}
+    - ref: pack
+      action: core.transform.reshape
+      depends_on: [delete_row, list_tables]
+      args:
+        value:
+          plan: P-B17
+          wave: TBL
+          table: ${{ ACTIONS.make_name.result.table }}
+          meta: ${{ ACTIONS.meta.result }}
+          is_in: ${{ ACTIONS.is_in.result }}
+          lookup_many: ${{ ACTIONS.lookup_many.result }}
+          search: ${{ ACTIONS.search.result }}
+          download: ${{ ACTIONS.download.result }}
+          ok: true
+  returns: ${{ ACTIONS.pack.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: make_name, x: 0, y: 120 }
+    - { ref: create_table, x: 0, y: 240 }
+    - { ref: list_tables, x: 0, y: 360 }
+    - { ref: meta, x: 0, y: 480 }
+    - { ref: insert_one, x: 0, y: 600 }
+    - { ref: insert_many, x: 0, y: 720 }
+    - { ref: is_in, x: 0, y: 840 }
+    - { ref: lookup_many, x: 0, y: 960 }
+    - { ref: search, x: 0, y: 1080 }
+    - { ref: update_row, x: 0, y: 1200 }
+    - { ref: download, x: 0, y: 1320 }
+    - { ref: delete_row, x: 0, y: 1440 }
+    - { ref: pack, x: 0, y: 1560 }

@@ -1,0 +1,34 @@
+# b17 · lvl-a · ctrl · subflow
+# legacy: wf_b17aL0Subflow01
+type: workflow
+id: wf_b17LvlACtrlSubflow
+alias: b17-lvl-a-ctrl-subflow
+definition:
+  title: "b17 · lvl-a · ctrl · subflow"
+  description: >
+    P-B17 product-test artifact. Level: lvl-a (machine). Topic: T-CTRL. Role: subflow. Parent subflow caller. Org: B17 Lab · Workspace: b17-ctrl. Naming: docs/15-b17-product-test/01-naming-standard.md. Legacy folder: wf_b17aL0Subflow01.
+  entrypoint:
+    ref: launch
+  actions:
+    - ref: launch
+      action: core.workflow.execute
+      args:
+        workflow_alias: b17-lvl-a-ctrl-sub-child
+        trigger_inputs: {}
+        wait_strategy: wait
+        timeout: 60
+        loop_strategy: sequential
+        fail_strategy: isolated
+    - ref: pack
+      action: core.transform.reshape
+      depends_on: [launch]
+      args:
+        value:
+          launched: true
+          tag: B17A-L0-subflow
+  returns: ${{ ACTIONS.pack.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: launch, x: 0, y: 120 }
+    - { ref: pack, x: 0, y: 240 }

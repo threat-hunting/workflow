@@ -1,0 +1,42 @@
+# P-B17 · lvl-a · topic trig · role=seed-case-for-status (standalone)
+# Creates Case with topic-trig so status_changed handler can match after PATCH status
+type: workflow
+id: wf_b17LvlATrigSeedStatusCase
+alias: b17-lvl-a-trig-seed-status-case
+definition:
+  title: "b17 · lvl-a · trig · seed-status-case"
+  description: >
+    P-B17 seed for status_changed Case-trigger demo. Creates Case with tags
+    b17, lvl-a, topic-trig. Pair with b17-lvl-a-trig-status-changed (needs-trigger).
+    RUN MODE: standalone. Org: B17 Lab · Workspace: b17-trig.
+  entrypoint:
+    ref: open_case
+  actions:
+    - ref: open_case
+      action: core.cases.create_case
+      args:
+        summary: "b17 · lvl-a · trig · seed for status_changed"
+        description: >
+          Seed Case for status_changed Case-trigger panel demo (T-TRIG).
+          Runner will PATCH status new→in_progress to fire the handler.
+        priority: medium
+        severity: medium
+        status: new
+        tags: [b17, lvl-a, topic-trig]
+        create_missing_tags: true
+    - ref: pack
+      action: core.transform.reshape
+      depends_on: [open_case]
+      args:
+        value:
+          plan: P-B17
+          level: lvl-a
+          topic: trig
+          role: seed-status-case
+          case_id: ${{ ACTIONS.open_case.result.id }}
+  returns: ${{ ACTIONS.pack.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: open_case, x: 0, y: 120 }
+    - { ref: pack, x: 0, y: 240 }

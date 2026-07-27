@@ -1,0 +1,42 @@
+# P-B17 · lvl-a · topic ai · role=custom-llm-smoke
+# Custom provider: B17 Lab AI Gateway → http://192.168.11.110:4000/v1 (passthrough)
+# Model: b17-lab-smoke (lab OpenAI-compatible stub via LiteLLM)
+type: workflow
+id: wf_b17LvlAAiCustomLlm
+alias: b17-lvl-a-ai-custom-llm
+definition:
+  title: "b17 · lvl-a · ai · custom-llm"
+  description: >
+    P-B17 product-test artifact. Level: lvl-a. Topic: T-AI. Role: custom LLM smoke.
+    Calls ai.action against org custom provider (passthrough) pointing at lab AI Gateway.
+    Expect assistant content marker PONG-B17-LAB. Org: B17 Lab · Workspace: b17-ai.
+  entrypoint:
+    ref: ask
+  actions:
+    - ref: ask
+      action: ai.action
+      args:
+        user_prompt: "Reply with exactly PONG and nothing else."
+        instructions: "You are a lab smoke model. Reply with exactly PONG."
+        model:
+          model_name: b17-lab-smoke
+          model_provider: custom-model-provider
+        enable_thinking: false
+        max_requests: 5
+        retries: 1
+    - ref: pack
+      action: core.transform.reshape
+      depends_on: [ask]
+      args:
+        value:
+          plan: P-B17
+          level: lvl-a
+          topic: ai
+          role: custom-llm-smoke
+          result: ${{ ACTIONS.ask.result }}
+  returns: ${{ ACTIONS.pack.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: ask, x: 0, y: 120 }
+    - { ref: pack, x: 0, y: 240 }

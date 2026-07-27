@@ -1,0 +1,59 @@
+# P-B17 · lvl-b · topic hitl-int · role=request
+# Naming: docs/15-b17-product-test/01-naming-standard.md · KM DO-02-091 / DO-02-092
+# Org: B17 Lab · Workspace: b17-hitl-int · External deps: none
+type: workflow
+id: wf_b17LvlBHitlIntRequest
+alias: b17-lvl-b-hitl-int-request
+definition:
+  title: "b17 · lvl-b · hitl-int · request"
+  description: >
+    P-B17 product-test artifact.
+    Level: lvl-b (machine + human gate) — not a separate org; lives in org B17 Lab.
+    Topic: T-HITL-INT (internal HITL without Slack/LLM).
+    Role: request — opens a Case with pending tags and instructs a human or Agent-as
+    runner to decide via Gate (comment-select-workflow M3, or manual/webhook M1/M2).
+    Does not run the sensitive action. Pair: alias b17-lvl-b-hitl-int-gate.
+    Workspace target: b17-hitl-int. Case-trigger panel on Gate stays OFF by design.
+  entrypoint:
+    ref: open_case
+  actions:
+    - ref: open_case
+      action: core.cases.create_case
+      args:
+        summary: "b17 · lvl-b · hitl-int · pending"
+        description: >
+          P-B17 T-HITL-INT pending decision. Sensitive path blocked until Gate
+          decision approve|deny (M1/M2/M3). Tags: b17, lvl-b, topic-hitl-int, hitl-int-pending.
+        priority: medium
+        severity: medium
+        status: new
+        tags: [b17, lvl-b, topic-hitl-int, hitl-int-pending]
+        create_missing_tags: true
+    - ref: notify
+      action: core.cases.create_comment
+      depends_on: [open_case]
+      args:
+        case_id: ${{ ACTIONS.open_case.result.id }}
+        content: >
+          PENDING (T-HITL-INT). Type approve or deny and select workflow
+          «b17 · lvl-b · hitl-int · gate». Also valid: Run/webhook Gate with decision+case_id.
+          Case-trigger UI on Gate stays OFF — comment→select-workflow is the human path.
+    - ref: pack
+      action: core.transform.reshape
+      depends_on: [notify]
+      args:
+        value:
+          case_id: ${{ ACTIONS.open_case.result.id }}
+          case_number: ${{ ACTIONS.open_case.result.case_number }}
+          plan: P-B17
+          level: lvl-b
+          topic: hitl-int
+          role: request
+          hitl_status: pending
+  returns: ${{ ACTIONS.pack.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: open_case, x: 0, y: 120 }
+    - { ref: notify, x: 0, y: 240 }
+    - { ref: pack, x: 0, y: 360 }

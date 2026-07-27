@@ -1,0 +1,31 @@
+# b17 · lvl-a · trig · webhook
+# legacy: wf_b17aL0Webhook01
+type: workflow
+id: wf_b17LvlATrigWebhook
+alias: b17-lvl-a-trig-webhook
+definition:
+  title: "b17 · lvl-a · trig · webhook"
+  description: >
+    P-B17 product-test artifact. Level: lvl-a (machine). Topic: T-TRIG. Role: webhook. Webhook trigger (T-TRIG; not Case-trigger panel). Org: B17 Lab · Workspace: b17-trig. Naming: docs/15-b17-product-test/01-naming-standard.md. Legacy folder: wf_b17aL0Webhook01.
+  entrypoint:
+    ref: echo
+    expects:
+      ping:
+        type: str
+        default: ok
+  actions:
+    - ref: echo
+      action: core.transform.reshape
+      args:
+        value:
+          ping: ${{ TRIGGER.ping }}
+          plan: P-B17
+          level: lvl-a
+          topic: trig
+          role: webhook
+          tag: b17-lvl-a-trig-webhook
+  returns: ${{ ACTIONS.echo.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: echo, x: 0, y: 120 }

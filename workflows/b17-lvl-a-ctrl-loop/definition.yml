@@ -1,0 +1,42 @@
+# b17 · lvl-a · ctrl · loop
+# legacy: wf_b17aL0Loop01
+type: workflow
+id: wf_b17LvlACtrlLoop
+alias: b17-lvl-a-ctrl-loop
+definition:
+  title: "b17 · lvl-a · ctrl · loop"
+  description: >
+    P-B17 product-test artifact. Level: lvl-a (machine). Topic: T-CTRL. Role: loop. Loop control-flow. Org: B17 Lab · Workspace: b17-ctrl. Naming: docs/15-b17-product-test/01-naming-standard.md. Legacy folder: wf_b17aL0Loop01.
+  entrypoint:
+    ref: loop_start
+  actions:
+    - ref: loop_start
+      action: core.loop.start
+    - ref: body
+      action: core.transform.reshape
+      depends_on: [loop_start]
+      args:
+        value:
+          iteration: ${{ ACTIONS.loop_start.result.iteration }}
+          tag: B17A-L0-loop
+    - ref: loop_end
+      action: core.loop.end
+      depends_on: [body]
+      args:
+        condition: ${{ ACTIONS.loop_start.result.iteration < 2 }}
+        max_iterations: 10
+    - ref: after_loop
+      action: core.transform.reshape
+      depends_on: [loop_end]
+      args:
+        value:
+          continue_flag: ${{ ACTIONS.loop_end.result.continue }}
+          last_body: ${{ ACTIONS.body.result }}
+  returns: ${{ ACTIONS.after_loop.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: loop_start, x: 0, y: 120 }
+    - { ref: body, x: 0, y: 240 }
+    - { ref: loop_end, x: 0, y: 360 }
+    - { ref: after_loop, x: 0, y: 480 }

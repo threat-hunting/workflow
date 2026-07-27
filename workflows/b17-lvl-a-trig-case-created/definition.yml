@@ -1,0 +1,133 @@
+# P-B17 · lvl-a · topic trig · role=case-created-handler
+# Case-trigger panel: ON (event_types=case_created)
+# NOTE: tag_filters on case_created may miss tags attached in the same create_case
+# transaction — filter topic-trig inside the workflow (get_case). See DO-02-093.
+# Naming: docs/15-b17-product-test/01-naming-standard.md
+type: workflow
+id: wf_b17LvlATrigCaseCreated
+alias: b17-lvl-a-trig-case-created
+definition:
+  title: "b17 · lvl-a · trig · case-created · needs-trigger"
+  description: >
+    P-B17 product-test artifact demonstrating the Case-trigger PANEL (automatic).
+    Level: lvl-a (machine). Topic: T-TRIG. Role: handler for case_created.
+    Org: B17 Lab · Workspace: b17-trig.
+    Panel config: status=online, event_types=[case_created], tag_filters=[]
+    (product quirk: tag_filters at case_created time may not see tags from the same
+    create_case; this workflow loads the Case and only handles when topic-trig is present).
+    Adds tag trig-handled + audit comment when matched; otherwise completes as skipped.
+    RUN MODE: needs-trigger — bare Manual Run without Case event (no case_id) WILL FAIL;
+    title suffix «needs-trigger». Educational: DO-02-093 · Ops: DO-02-095 · DO-02-097.
+  entrypoint:
+    ref: normalize
+    expects: {}
+  actions:
+    - ref: normalize
+      action: core.script.run_python
+      args:
+        allow_network: false
+        timeout_seconds: 30
+        inputs:
+          case_id: ${{ TRIGGER.case_id }}
+          event_type: ${{ TRIGGER.event_type }}
+          type: ${{ TRIGGER.type }}
+          tags: ${{ TRIGGER.tags }}
+          summary: ${{ TRIGGER.summary }}
+        script: |
+          def main(case_id, event_type, type, tags, summary):
+              cid = str(case_id or "").strip()
+              et = str(event_type or type or "case_created")
+              tag_list = []
+              if isinstance(tags, list):
+                  for t in tags:
+                      if isinstance(t, dict):
+                          tag_list.append(str(t.get("ref") or t.get("name") or ""))
+                      else:
+                          tag_list.append(str(t))
+              return {
+                  "case_id": cid,
+                  "event_type": et,
+                  "trigger_tags": tag_list,
+                  "summary": str(summary or ""),
+              }
+    - ref: require_case
+      action: core.require
+      depends_on: [normalize]
+      args:
+        conditions: ${{ FN.length(ACTIONS.normalize.result.case_id) > 0 }}
+        require_all: true
+        raise_error: true
+    - ref: load_case
+      action: core.cases.get_case
+      depends_on: [require_case]
+      args:
+        case_id: ${{ ACTIONS.normalize.result.case_id }}
+    - ref: decide
+      action: core.script.run_python
+      depends_on: [load_case]
+      args:
+        allow_network: false
+        timeout_seconds: 30
+        inputs:
+          case: ${{ ACTIONS.load_case.result }}
+          case_id: ${{ ACTIONS.normalize.result.case_id }}
+          event_type: ${{ ACTIONS.normalize.result.event_type }}
+        script: |
+          def main(case, case_id, event_type):
+              tags = []
+              for t in (case or {}).get("tags") or []:
+                  if isinstance(t, dict):
+                      tags.append(str(t.get("ref") or t.get("name") or ""))
+                  else:
+                      tags.append(str(t))
+              matched = "topic-trig" in tags
+              return {
+                  "matched": matched,
+                  "matched_s": "yes" if matched else "no",
+                  "tags": tags,
+                  "case_id": case_id,
+                  "event_type": event_type,
+                  "audit": (
+                      f"P-B17 T-TRIG case-created MATCHED tags={tags}"
+                      if matched
+                      else f"P-B17 T-TRIG case-created SKIPPED (no topic-trig) tags={tags}"
+                  ),
+              }
+    - ref: mark_handled
+      action: core.cases.add_case_tag
+      depends_on: [decide]
+      run_if: ${{ FN.is_equal(ACTIONS.decide.result.matched_s, "yes") }}
+      args:
+        case_id: ${{ ACTIONS.normalize.result.case_id }}
+        tag: trig-handled
+        create_if_missing: true
+    - ref: audit
+      action: core.cases.create_comment
+      depends_on: [decide]
+      args:
+        case_id: ${{ ACTIONS.normalize.result.case_id }}
+        content: ${{ ACTIONS.decide.result.audit }}
+    - ref: pack
+      action: core.transform.reshape
+      depends_on: [audit]
+      args:
+        value:
+          plan: P-B17
+          level: lvl-a
+          topic: trig
+          role: case-created-handler
+          case_id: ${{ ACTIONS.normalize.result.case_id }}
+          event_type: ${{ ACTIONS.normalize.result.event_type }}
+          matched_s: ${{ ACTIONS.decide.result.matched_s }}
+          handled: ${{ FN.is_equal(ACTIONS.decide.result.matched_s, "yes") }}
+  returns: ${{ ACTIONS.pack.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: normalize, x: 0, y: 120 }
+    - { ref: require_case, x: 0, y: 240 }
+    - { ref: load_case, x: 0, y: 360 }
+    - { ref: decide, x: 0, y: 480 }
+    - { ref: mark_handled, x: -120, y: 600 }
+    - { ref: audit, x: 120, y: 600 }
+    - { ref: pack, x: 120, y: 720 }

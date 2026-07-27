@@ -1,0 +1,44 @@
+# b17 · lvl-a · ctrl · join-any
+# legacy: wf_b17aL0JoinAny01
+type: workflow
+id: wf_b17LvlACtrlJoinAny
+alias: b17-lvl-a-ctrl-join-any
+definition:
+  title: "b17 · lvl-a · ctrl · join-any"
+  description: >
+    P-B17 product-test artifact. Level: lvl-a (machine). Topic: T-CTRL. Role: join-any. Join strategy any. Org: B17 Lab · Workspace: b17-ctrl. Naming: docs/15-b17-product-test/01-naming-standard.md. Legacy folder: wf_b17aL0JoinAny01.
+  entrypoint:
+    ref: start
+  actions:
+    - ref: start
+      action: core.transform.reshape
+      args:
+        value: { go: true }
+    - ref: branch_fast
+      action: core.transform.reshape
+      depends_on: [start]
+      args:
+        value: { which: fast, tag: B17A-L0-join-any }
+    - ref: branch_slow
+      action: core.transform.reshape
+      depends_on: [start]
+      start_delay: 3
+      args:
+        value: { which: slow }
+    - ref: joined_any
+      action: core.transform.reshape
+      depends_on: [branch_fast, branch_slow]
+      join_strategy: any
+      args:
+        value:
+          joined: true
+          note: any-branch-ready
+          tag: B17A-L0-join-any
+  returns: ${{ ACTIONS.joined_any.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: start, x: 0, y: 120 }
+    - { ref: branch_fast, x: -120, y: 240 }
+    - { ref: branch_slow, x: 120, y: 240 }
+    - { ref: joined_any, x: 0, y: 360 }

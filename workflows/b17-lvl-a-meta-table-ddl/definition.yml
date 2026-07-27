@@ -1,0 +1,150 @@
+# P-B17 · lvl-a · meta · table-ddl + get_linked_case_rows · COVERAGE-100 Wave META
+# update_column / delete_column UDF → HTTP 500 on lab (REST works) = EXCEPTION_PRODUCT invoke+.error
+type: workflow
+id: wf_b17LvlAMetaTableDdl
+alias: b17-lvl-a-meta-table-ddl
+definition:
+  title: "b17 · lvl-a · meta · table-ddl"
+  description: >
+    P-B17 Wave META. create_column · update_table · get_linked_case_rows COMPLETED.
+    update_column · delete_column invoked with .error recovery (EXCEPTION_PRODUCT UDF 500).
+    Org: B17 Lab · WS: b17-table. SoT: COVERAGE-100.md · DO-02-104.
+  entrypoint:
+    ref: make_name
+  actions:
+    - ref: make_name
+      action: core.script.run_python
+      args:
+        allow_network: false
+        timeout_seconds: 15
+        inputs: {}
+        script: |
+          def main():
+              import time
+              s = str(int(time.time()))
+              return {
+                  "table": f"b17_meta_ddl_{s}",
+                  "table_renamed": f"b17_meta_ddl_r_{s}",
+                  "host": f"b17-meta-host-{s}",
+              }
+    - ref: create_table
+      action: core.table.create_table
+      depends_on: [make_name]
+      args:
+        name: ${{ ACTIONS.make_name.result.table }}
+        raise_on_duplicate: false
+        columns:
+          - { name: hostname, type: TEXT, nullable: false }
+    - ref: add_col
+      action: core.table.create_column
+      depends_on: [create_table]
+      args:
+        table: ${{ ACTIONS.make_name.result.table }}
+        column: { name: note, type: TEXT, nullable: true }
+    - ref: touch_col
+      action: core.table.update_column
+      depends_on: [add_col]
+      args:
+        table: ${{ ACTIONS.make_name.result.table }}
+        column: note
+        update: { nullable: false }
+    - ref: touch_ok
+      action: core.transform.reshape
+      depends_on: [touch_col]
+      args:
+        value: { update_column: ok }
+    - ref: touch_err
+      action: core.transform.reshape
+      depends_on: [touch_col.error]
+      args:
+        value: { update_column: exception_product_udf_500 }
+    - ref: after_touch
+      action: core.transform.reshape
+      depends_on: [touch_ok, touch_err]
+      join_strategy: any
+      args:
+        value: { after_touch: true }
+    - ref: drop_col
+      action: core.table.delete_column
+      depends_on: [after_touch]
+      args:
+        table: ${{ ACTIONS.make_name.result.table }}
+        column: note
+    - ref: drop_ok
+      action: core.transform.reshape
+      depends_on: [drop_col]
+      args:
+        value: { delete_column: ok }
+    - ref: drop_err
+      action: core.transform.reshape
+      depends_on: [drop_col.error]
+      args:
+        value: { delete_column: exception_product_udf_500 }
+    - ref: after_drop
+      action: core.transform.reshape
+      depends_on: [drop_ok, drop_err]
+      join_strategy: any
+      args:
+        value: { after_drop: true }
+    - ref: rename_table
+      action: core.table.update_table
+      depends_on: [after_drop]
+      args:
+        name: ${{ ACTIONS.make_name.result.table }}
+        new_name: ${{ ACTIONS.make_name.result.table_renamed }}
+    - ref: open_case
+      action: core.cases.create_case
+      depends_on: [rename_table]
+      args:
+        summary: "b17 · lvl-a · meta · table-ddl"
+        description: Wave META linked-rows check after DDL.
+        priority: low
+        severity: low
+        status: new
+        tags: [b17, lvl-a, topic-table, meta]
+        create_missing_tags: true
+    - ref: insert_link
+      action: core.cases.insert_row
+      depends_on: [open_case]
+      args:
+        case_id: ${{ ACTIONS.open_case.result.id }}
+        table_id: ${{ ACTIONS.create_table.result.id }}
+        row:
+          hostname: ${{ ACTIONS.make_name.result.host }}
+    - ref: linked_rows
+      action: core.cases.get_linked_case_rows
+      depends_on: [insert_link]
+      args:
+        case_id: ${{ ACTIONS.open_case.result.id }}
+    - ref: pack
+      action: core.transform.reshape
+      depends_on: [linked_rows]
+      args:
+        value:
+          wave: meta
+          role: table-ddl
+          table: ${{ ACTIONS.make_name.result.table_renamed }}
+          case_id: ${{ ACTIONS.open_case.result.id }}
+          linked: ${{ ACTIONS.linked_rows.result }}
+          after_touch: ${{ ACTIONS.after_touch.result }}
+          after_drop: ${{ ACTIONS.after_drop.result }}
+  returns: ${{ ACTIONS.pack.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: make_name, x: 0, y: 120 }
+    - { ref: create_table, x: 0, y: 240 }
+    - { ref: add_col, x: 0, y: 360 }
+    - { ref: touch_col, x: -160, y: 480 }
+    - { ref: touch_ok, x: -240, y: 600 }
+    - { ref: touch_err, x: -80, y: 600 }
+    - { ref: after_touch, x: -160, y: 720 }
+    - { ref: drop_col, x: -160, y: 840 }
+    - { ref: drop_ok, x: -240, y: 960 }
+    - { ref: drop_err, x: -80, y: 960 }
+    - { ref: after_drop, x: -160, y: 1080 }
+    - { ref: rename_table, x: 0, y: 1200 }
+    - { ref: open_case, x: 0, y: 1320 }
+    - { ref: insert_link, x: 0, y: 1440 }
+    - { ref: linked_rows, x: 0, y: 1560 }
+    - { ref: pack, x: 0, y: 1680 }

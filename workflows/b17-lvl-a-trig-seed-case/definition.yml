@@ -1,0 +1,46 @@
+# P-B17 · lvl-a · topic trig · role=seed-case
+# Creates a Case WITH tags so Case-trigger (case_created + tag_filters) can match.
+# Naming: docs/15-b17-product-test/01-naming-standard.md
+type: workflow
+id: wf_b17LvlATrigSeedCase
+alias: b17-lvl-a-trig-seed-case
+definition:
+  title: "b17 · lvl-a · trig · seed-case"
+  description: >
+    P-B17 product-test artifact. Level: lvl-a. Topic: T-TRIG. Role: seed-case.
+    Creates a Case that already includes tag topic-trig so the Case-trigger panel
+    on b17-lvl-a-trig-case-created (event=case_created, tag_filters=[topic-trig])
+    can match. Org: B17 Lab · Workspace: b17-trig. Case-trigger on THIS seed
+    workflow stays OFF — only the handler enables the panel.
+  entrypoint:
+    ref: open_case
+  actions:
+    - ref: open_case
+      action: core.cases.create_case
+      args:
+        summary: "b17 · lvl-a · trig · seed for case_created"
+        description: >
+          Seed Case for Case-trigger panel demo (T-TRIG). Tags include topic-trig.
+          Human must NOT select a workflow in comment composer for the happy path.
+        priority: medium
+        severity: medium
+        status: new
+        tags: [b17, lvl-a, topic-trig]
+        create_missing_tags: true
+    - ref: pack
+      action: core.transform.reshape
+      depends_on: [open_case]
+      args:
+        value:
+          plan: P-B17
+          level: lvl-a
+          topic: trig
+          role: seed-case
+          case_id: ${{ ACTIONS.open_case.result.id }}
+          case_number: ${{ ACTIONS.open_case.result.case_number }}
+  returns: ${{ ACTIONS.pack.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: open_case, x: 0, y: 120 }
+    - { ref: pack, x: 0, y: 240 }

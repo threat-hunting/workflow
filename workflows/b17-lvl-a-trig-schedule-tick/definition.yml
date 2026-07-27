@@ -1,0 +1,35 @@
+# P-B17 · lvl-a · topic trig · role=schedule-tick (standalone target for Schedule API)
+# Schedule itself is created via API (POST /schedules) — see runner / DO-02-099
+# Naming: docs/15-b17-product-test/01-naming-standard.md
+type: workflow
+id: wf_b17LvlATrigScheduleTick
+alias: b17-lvl-a-trig-schedule-tick
+definition:
+  title: "b17 · lvl-a · trig · schedule-tick"
+  description: >
+    P-B17 product-test artifact. Level: lvl-a. Topic: T-TRIG. Role: schedule-tick.
+    Target workflow for Schedule API playbook (create cron offline → list → delete).
+    RUN MODE: standalone — bare Run OK; schedule fire is optional online path.
+    Org: B17 Lab · Workspace: b17-trig. Re-seed: DO-02-098 · wave: DO-02-099.
+  entrypoint:
+    ref: tick
+    expects:
+      source:
+        type: str
+        default: manual
+  actions:
+    - ref: tick
+      action: core.transform.reshape
+      args:
+        value:
+          plan: P-B17
+          level: lvl-a
+          topic: trig
+          role: schedule-tick
+          source: ${{ TRIGGER.source }}
+          ping: schedule-tick-ok
+  returns: ${{ ACTIONS.tick.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: tick, x: 0, y: 120 }

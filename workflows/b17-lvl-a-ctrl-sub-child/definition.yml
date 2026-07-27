@@ -1,0 +1,24 @@
+# b17 · lvl-a · ctrl · sub-child
+# legacy: wf_b17aL0SubChild01
+type: workflow
+id: wf_b17LvlACtrlSubChild
+alias: b17-lvl-a-ctrl-sub-child
+definition:
+  title: "b17 · lvl-a · ctrl · sub-child"
+  description: >
+    P-B17 product-test artifact. Level: lvl-a (machine). Topic: T-CTRL. Role: sub-child. Child workflow for subflow. Org: B17 Lab · Workspace: b17-ctrl. Naming: docs/15-b17-product-test/01-naming-standard.md. Legacy folder: wf_b17aL0SubChild01.
+  entrypoint:
+    ref: echo
+    expects: {}
+  actions:
+    - ref: echo
+      action: core.transform.reshape
+      args:
+        value:
+          child: true
+          tag: B17A-L0-subchild
+  returns: ${{ ACTIONS.echo.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: echo, x: 0, y: 120 }

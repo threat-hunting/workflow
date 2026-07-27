@@ -1,0 +1,47 @@
+# b17 · lvl-a · ctrl · error-path
+# legacy: wf_b17aL0ErrorPath01
+type: workflow
+id: wf_b17LvlACtrlErrorPath
+alias: b17-lvl-a-ctrl-error-path
+definition:
+  title: "b17 · lvl-a · ctrl · error-path"
+  description: >
+    P-B17 product-test artifact. Level: lvl-a (machine). Topic: T-CTRL. Role: error-path. depends_on ref.error recovery. Org: B17 Lab · Workspace: b17-ctrl. Naming: docs/15-b17-product-test/01-naming-standard.md. Legacy folder: wf_b17aL0ErrorPath01.
+  entrypoint:
+    ref: seed
+  actions:
+    - ref: seed
+      action: core.transform.reshape
+      args:
+        value: { ok: false }
+    - ref: gate
+      action: core.require
+      depends_on: [seed]
+      args:
+        conditions: ${{ ACTIONS.seed.result.ok }}
+        require_all: true
+        raise_error: true
+    - ref: on_success
+      action: core.transform.reshape
+      depends_on: [gate]
+      args:
+        value: { path: "success", unexpected: true }
+    - ref: on_error
+      action: core.transform.reshape
+      depends_on: [gate.error]
+      args:
+        value: { path: "error", recovered: true, tag: B17A-L0-error }
+    - ref: pack
+      action: core.transform.reshape
+      depends_on: [on_error]
+      args:
+        value: ${{ ACTIONS.on_error.result }}
+  returns: ${{ ACTIONS.pack.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: seed, x: 0, y: 120 }
+    - { ref: gate, x: 0, y: 240 }
+    - { ref: on_success, x: -120, y: 360 }
+    - { ref: on_error, x: 120, y: 360 }
+    - { ref: pack, x: 120, y: 480 }

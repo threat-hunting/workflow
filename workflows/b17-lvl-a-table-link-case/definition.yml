@@ -1,0 +1,105 @@
+# P-B17 · lvl-a · topic table · role=link-case (standalone)
+# Naming: docs/15-b17-product-test/01-naming-standard.md
+# Org: B17 Lab · Workspace: b17-table
+# Product: core.cases.insert_row / link_row / unlink_row (linked rows)
+type: workflow
+id: wf_b17LvlATableLinkCase
+alias: b17-lvl-a-table-link-case
+definition:
+  title: "b17 · lvl-a · table · link-case"
+  description: >
+    P-B17 product-test artifact. Level: lvl-a (machine). Topic: T-TABLE.
+    Role: link-case — create_table → create_case → cases.insert_row (insert+link)
+    → unlink_row → link_row → pack. RUN MODE: standalone (bare Manual Run OK).
+    Org: B17 Lab · Workspace: b17-table. Wave: DO-02-099 · re-seed: DO-02-098.
+  entrypoint:
+    ref: make_name
+  actions:
+    - ref: make_name
+      action: core.script.run_python
+      args:
+        allow_network: false
+        timeout_seconds: 15
+        inputs: {}
+        script: |
+          def main():
+              import time
+              suffix = str(int(time.time()))
+              return {
+                  "table": "b17_lvl_a_table_link",
+                  "indicator": f"b17.link.ioc.{suffix}",
+                  "confidence": 90,
+              }
+    - ref: create_table
+      action: core.table.create_table
+      depends_on: [make_name]
+      args:
+        name: ${{ ACTIONS.make_name.result.table }}
+        raise_on_duplicate: false
+        columns:
+          - { name: indicator, type: TEXT, nullable: false }
+          - { name: confidence, type: INTEGER, nullable: true }
+    - ref: open_case
+      action: core.cases.create_case
+      depends_on: [create_table]
+      args:
+        summary: "b17 · lvl-a · table · link-case seed"
+        description: >
+          Seed Case for T-TABLE linked-rows demo. Row will be insert+linked
+          then unlink/link roundtrip.
+        priority: medium
+        severity: medium
+        status: new
+        tags: [b17, lvl-a, topic-table]
+        create_missing_tags: true
+    - ref: insert_and_link
+      action: core.cases.insert_row
+      depends_on: [open_case]
+      args:
+        case_id: ${{ ACTIONS.open_case.result.id }}
+        # linked-rows API requires table UUID (not name) — from create_table.result.id
+        table_id: ${{ ACTIONS.create_table.result.id }}
+        row:
+          indicator: ${{ ACTIONS.make_name.result.indicator }}
+          confidence: ${{ ACTIONS.make_name.result.confidence }}
+    - ref: unlink
+      action: core.cases.unlink_row
+      depends_on: [insert_and_link]
+      args:
+        case_id: ${{ ACTIONS.open_case.result.id }}
+        table_id: ${{ ACTIONS.create_table.result.id }}
+        row_id: ${{ ACTIONS.insert_and_link.result.row_id }}
+    - ref: relink
+      action: core.cases.link_row
+      depends_on: [unlink]
+      args:
+        case_id: ${{ ACTIONS.open_case.result.id }}
+        table_id: ${{ ACTIONS.create_table.result.id }}
+        row_id: ${{ ACTIONS.insert_and_link.result.row_id }}
+    - ref: pack
+      action: core.transform.reshape
+      depends_on: [relink]
+      args:
+        value:
+          plan: P-B17
+          level: lvl-a
+          topic: table
+          role: link-case
+          table: ${{ ACTIONS.make_name.result.table }}
+          table_id: ${{ ACTIONS.create_table.result.id }}
+          case_id: ${{ ACTIONS.open_case.result.id }}
+          link_id: ${{ ACTIONS.insert_and_link.result.id }}
+          row_id: ${{ ACTIONS.insert_and_link.result.row_id }}
+          relinked: ${{ ACTIONS.relink.result }}
+          ok: true
+  returns: ${{ ACTIONS.pack.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: make_name, x: 0, y: 120 }
+    - { ref: create_table, x: 0, y: 240 }
+    - { ref: open_case, x: 0, y: 360 }
+    - { ref: insert_and_link, x: 0, y: 480 }
+    - { ref: unlink, x: 0, y: 600 }
+    - { ref: relink, x: 0, y: 720 }
+    - { ref: pack, x: 0, y: 840 }

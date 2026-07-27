@@ -1,0 +1,47 @@
+# b17 · lvl-a · ctrl · is-dup
+# legacy: wf_b17aL0IsDup01
+type: workflow
+id: wf_b17LvlACtrlIsDup
+alias: b17-lvl-a-ctrl-is-dup
+definition:
+  title: "b17 · lvl-a · ctrl · is-dup"
+  description: >
+    P-B17 product-test artifact. Level: lvl-a (machine). Topic: T-CTRL. Role: is-dup. is_duplicate helper. Org: B17 Lab · Workspace: b17-ctrl. Naming: docs/15-b17-product-test/01-naming-standard.md. Legacy folder: wf_b17aL0IsDup01.
+  entrypoint:
+    ref: seed
+  actions:
+    - ref: seed
+      action: core.transform.reshape
+      args:
+        value:
+          finding: { finding_id: "dup-l0-1", sev: high }
+    - ref: first
+      action: core.transform.is_duplicate
+      depends_on: [seed]
+      args:
+        item: ${{ ACTIONS.seed.result.finding }}
+        keys: [finding_id]
+        expire_seconds: 120
+    - ref: second
+      action: core.transform.is_duplicate
+      depends_on: [first]
+      args:
+        item: ${{ ACTIONS.seed.result.finding }}
+        keys: [finding_id]
+        expire_seconds: 120
+    - ref: pack
+      action: core.transform.reshape
+      depends_on: [second]
+      args:
+        value:
+          first: ${{ ACTIONS.first.result }}
+          second: ${{ ACTIONS.second.result }}
+          tag: B17A-L0-is-duplicate
+  returns: ${{ ACTIONS.pack.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: seed, x: 0, y: 120 }
+    - { ref: first, x: 0, y: 240 }
+    - { ref: second, x: 0, y: 360 }
+    - { ref: pack, x: 0, y: 480 }

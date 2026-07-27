@@ -1,0 +1,80 @@
+# P-B17 · lvl-a · topic ctrl · role=transform-rest (standalone)
+# Covers remaining transform + workflow.get_status (COVERAGE-100 Wave T0)
+# get_status: Temporal detach does not return wf_exec_id in action result —
+# runner injects TRIGGER.sample_wf_exec_id from a live sub-child execution.
+type: workflow
+id: wf_b17LvlACtrlTransformRest
+alias: b17-lvl-a-ctrl-transform-rest
+definition:
+  title: "b17 · lvl-a · ctrl · transform-rest"
+  description: >
+    P-B17 coverage pack Wave T0. Exercises remaining core.transform.*
+    (flatten_json, eval_jsonpaths, is_in, not_in) and core.workflow.get_status.
+    Org: B17 Lab · Workspace: b17-ctrl. SoT: COVERAGE-100.md · DO-02-104.
+  entrypoint:
+    ref: seed
+  actions:
+    - ref: seed
+      action: core.transform.reshape
+      args:
+        value:
+          alert:
+            actor: { email: "b17.coverage@securepath.ir" }
+            network: { source: { ip: "192.0.2.10" } }
+          items: ["alpha", "beta", "gamma", "omega"]
+          known: ["alpha", "beta", "gamma"]
+          sample_wf_exec_id: ${{ TRIGGER.sample_wf_exec_id }}
+    - ref: flat
+      action: core.transform.flatten_json
+      depends_on: [seed]
+      args:
+        json: ${{ ACTIONS.seed.result.alert }}
+    - ref: paths
+      action: core.transform.eval_jsonpaths
+      depends_on: [seed]
+      args:
+        json: ${{ ACTIONS.seed.result.alert }}
+        jsonpaths:
+          - $.actor.email
+          - $.network.source.ip
+    - ref: is_in
+      action: core.transform.is_in
+      depends_on: [seed]
+      args:
+        items: ${{ ACTIONS.seed.result.items }}
+        collection: ${{ ACTIONS.seed.result.known }}
+    - ref: not_in
+      action: core.transform.not_in
+      depends_on: [seed]
+      args:
+        items: ${{ ACTIONS.seed.result.items }}
+        collection: ${{ ACTIONS.seed.result.known }}
+    - ref: status
+      action: core.workflow.get_status
+      depends_on: [flat, paths, is_in, not_in]
+      args:
+        wf_exec_id: ${{ ACTIONS.seed.result.sample_wf_exec_id }}
+    - ref: pack
+      action: core.transform.reshape
+      depends_on: [status]
+      args:
+        value:
+          plan: P-B17
+          wave: T0
+          flat: ${{ ACTIONS.flat.result }}
+          paths: ${{ ACTIONS.paths.result }}
+          is_in: ${{ ACTIONS.is_in.result }}
+          not_in: ${{ ACTIONS.not_in.result }}
+          child_status: ${{ ACTIONS.status.result }}
+          ok: true
+  returns: ${{ ACTIONS.pack.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: seed, x: 0, y: 120 }
+    - { ref: flat, x: 0, y: 240 }
+    - { ref: paths, x: 0, y: 360 }
+    - { ref: is_in, x: 0, y: 480 }
+    - { ref: not_in, x: 0, y: 600 }
+    - { ref: status, x: 0, y: 720 }
+    - { ref: pack, x: 0, y: 840 }

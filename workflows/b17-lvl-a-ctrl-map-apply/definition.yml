@@ -1,0 +1,51 @@
+# b17 · lvl-a · ctrl · map-apply
+# legacy: wf_b17aL0MapApply01
+type: workflow
+id: wf_b17LvlACtrlMapApply
+alias: b17-lvl-a-ctrl-map-apply
+definition:
+  title: "b17 · lvl-a · ctrl · map-apply"
+  description: >
+    P-B17 product-test artifact. Level: lvl-a (machine). Topic: T-CTRL. Role: map-apply. map then apply pattern. Org: B17 Lab · Workspace: b17-ctrl. Naming: docs/15-b17-product-test/01-naming-standard.md. Legacy folder: wf_b17aL0MapApply01.
+  entrypoint:
+    ref: seed
+  actions:
+    - ref: seed
+      action: core.transform.reshape
+      args:
+        value:
+          nums: [1, 2, null, 3]
+    - ref: cleaned
+      action: core.transform.drop_nulls
+      depends_on: [seed]
+      args:
+        items: ${{ ACTIONS.seed.result.nums }}
+    - ref: mapped
+      action: core.transform.map
+      depends_on: [cleaned]
+      args:
+        items: ${{ ACTIONS.cleaned.result }}
+        python_lambda: "lambda x: x * 10"
+    - ref: applied
+      action: core.transform.apply
+      depends_on: [mapped]
+      args:
+        value: ${{ ACTIONS.mapped.result }}
+        python_lambda: "lambda xs: sum(xs)"
+    - ref: pack
+      action: core.transform.reshape
+      depends_on: [cleaned, mapped, applied]
+      args:
+        value:
+          cleaned: ${{ ACTIONS.cleaned.result }}
+          mapped: ${{ ACTIONS.mapped.result }}
+          applied: ${{ ACTIONS.applied.result }}
+  returns: ${{ ACTIONS.pack.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: seed, x: 0, y: 120 }
+    - { ref: cleaned, x: 0, y: 240 }
+    - { ref: mapped, x: 0, y: 360 }
+    - { ref: applied, x: 0, y: 480 }
+    - { ref: pack, x: 0, y: 600 }

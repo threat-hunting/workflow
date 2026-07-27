@@ -1,0 +1,73 @@
+# P-B17 · lvl-a · topic ctrl/io · role=http (standalone) · COVERAGE-100 Wave IO
+# Covers core.http_* + core.duckdb.execute_sql. sql.execute_query = EXCEPTION_LAB (no CONNECTION_URL).
+type: workflow
+id: wf_b17LvlAIoHttp
+alias: b17-lvl-a-io-http
+definition:
+  title: "b17 · lvl-a · io · http"
+  description: >
+    P-B17 coverage pack Wave IO. Exercises core.http_request · http_poll ·
+    http_paginate · core.duckdb.execute_sql against a LAN fixture on host 116.
+    Org: B17 Lab · Workspace: b17-ctrl.
+    SoT: kopal-other-b17/docs/COVERAGE-100.md · DO-02-104.
+  entrypoint:
+    ref: http_get
+  actions:
+    - ref: http_get
+      action: core.http_request
+      args:
+        url: ${{ TRIGGER.fixture_base }}/ok
+        method: GET
+        timeout: 15.0
+        verify_ssl: false
+
+    - ref: http_poll
+      action: core.http_poll
+      depends_on: [http_get]
+      args:
+        url: ${{ TRIGGER.fixture_base }}/job
+        method: GET
+        timeout: 15.0
+        verify_ssl: false
+        poll_interval: 0.5
+        poll_max_attempts: 10
+        poll_condition: "lambda response: response['data'].get('status') == 'completed'"
+
+    - ref: http_paginate
+      action: core.http_paginate
+      depends_on: [http_poll]
+      args:
+        url: ${{ TRIGGER.fixture_base }}/page
+        method: GET
+        params:
+          cursor: "0"
+        timeout: 15.0
+        verify_ssl: false
+        items_jsonpath: $.items[*]
+        limit: 100
+        stop_condition: "lambda response: response['data'].get('next_cursor') is None"
+        next_request: "lambda response: {'url': 'http://192.168.11.116:18766/page', 'method': 'GET', 'params': {'cursor': response['data']['next_cursor']}}"
+
+    - ref: duckdb_sql
+      action: core.duckdb.execute_sql
+      depends_on: [http_paginate]
+      args:
+        sql: |
+          WITH findings(id, severity) AS (
+            VALUES (1, 'high'), (2, 'low'), (3, 'high')
+          )
+          SELECT severity, count(*) AS count
+          FROM findings
+          GROUP BY severity
+          ORDER BY count DESC
+
+    - ref: pack_ok
+      action: core.transform.reshape
+      depends_on: [duckdb_sql]
+      args:
+        value:
+          wave: io
+          http_status: ${{ ACTIONS.http_get.result.status_code }}
+          poll_status: ${{ ACTIONS.http_poll.result.data.status }}
+          page_items: ${{ ACTIONS.http_paginate.result }}
+          duckdb_rows: ${{ ACTIONS.duckdb_sql.result }}

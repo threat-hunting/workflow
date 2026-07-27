@@ -1,0 +1,39 @@
+# P-B17 · lvl-b · topic hitl-ext · role=slack-response (HOLD until Slack secret)
+# Naming: docs/15-b17-product-test/01-naming-standard.md · future deps DO-02-090
+type: workflow
+id: wf_b17LvlBHitlExtSlackResponse
+alias: b17-lvl-b-hitl-ext-slack-response
+definition:
+  title: "b17 · lvl-b · hitl-ext · slack-response"
+  description: >
+    P-B17 product-test artifact (future / HOLD_SLACK).
+    Level: lvl-b. Topic: T-HITL-EXT (external HITL — Slack interaction:response).
+    Role: slack-response pause on tools.slack.post_message.
+    Org: B17 Lab · Workspace target when enabled: b17-hitl-ext (create when seeded).
+    Not part of happy-path T-HITL-INT. Do not enable without Slack org secret (DO-03-001).
+  entrypoint:
+    ref: ask_human
+  actions:
+    - ref: ask_human
+      action: tools.slack.post_message
+      interaction:
+        type: response
+        timeout: 300
+      args:
+        channel: ${{ SECRETS.slack.CHANNEL_ID }}
+        text: "P-B17 T-HITL-EXT — reply to continue (lab)."
+    - ref: after
+      action: core.transform.reshape
+      depends_on: [ask_human]
+      args:
+        value:
+          plan: P-B17
+          level: lvl-b
+          topic: hitl-ext
+          interaction: ${{ ACTIONS.ask_human.interaction }}
+  returns: ${{ ACTIONS.after.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: ask_human, x: 0, y: 120 }
+    - { ref: after, x: 0, y: 240 }

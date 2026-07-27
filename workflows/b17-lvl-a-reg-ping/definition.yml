@@ -1,0 +1,37 @@
+# P-B17 · lvl-a · topic reg · role=custom-registry-ping
+# UDF: tools.b17_lab.ping from Forgejo remote kopal-integrations-b17 ONLY
+# Naming: docs/15-b17-product-test/01-naming-standard.md · DO-02-084 · COVERAGE-100
+# Supersedes alias b17a-l0-custom-registry-ping (folder wf_2mhoBq8oEFmyiwO9qfBaQH)
+type: workflow
+id: wf_b17LvlARegPing
+alias: b17-lvl-a-reg-ping
+definition:
+  title: "b17 · lvl-a · reg · ping"
+  description: >
+    P-B17 product-test artifact. Level: lvl-a. Topic: T-REG. Role: custom-registry ping.
+    Invokes tools.b17_lab.ping from remote Forgejo repo kopal-integrations-b17.
+    RUN MODE: standalone. Org: B17 Lab · Workspace: b17-reg.
+    Ambiguous-safe: org must NOT also sync the same package from local mount.
+  entrypoint:
+    ref: ping
+  actions:
+    - ref: ping
+      action: tools.b17_lab.ping
+      args:
+        message: "b17 · lvl-a · reg · ping · remote-only"
+    - ref: pack
+      action: core.transform.reshape
+      depends_on: [ping]
+      args:
+        value:
+          plan: P-B17
+          level: lvl-a
+          topic: reg
+          role: custom-registry-ping
+          ping: ${{ ACTIONS.ping.result }}
+  returns: ${{ ACTIONS.pack.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: ping, x: 0, y: 120 }
+    - { ref: pack, x: 0, y: 240 }

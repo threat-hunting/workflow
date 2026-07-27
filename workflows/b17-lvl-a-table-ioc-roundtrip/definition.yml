@@ -1,0 +1,77 @@
+# P-B17 · lvl-a · topic table · role=ioc-roundtrip (standalone)
+# Naming: docs/15-b17-product-test/01-naming-standard.md
+# Org: B17 Lab · Workspace: b17-table
+type: workflow
+id: wf_b17LvlATableIocRoundtrip
+alias: b17-lvl-a-table-ioc-roundtrip
+definition:
+  title: "b17 · lvl-a · table · ioc-roundtrip"
+  description: >
+    P-B17 product-test artifact. Level: lvl-a (machine). Topic: T-TABLE.
+    Role: ioc-roundtrip — create_table → insert_row → lookup → pack.
+    RUN MODE: standalone (bare Manual Run OK). Org: B17 Lab · Workspace: b17-table.
+    Wave playbook: DO-02-099 · re-seed: DO-02-098.
+  entrypoint:
+    ref: make_name
+  actions:
+    - ref: make_name
+      action: core.script.run_python
+      args:
+        allow_network: false
+        timeout_seconds: 15
+        inputs: {}
+        script: |
+          def main():
+              import time
+              suffix = str(int(time.time()))
+              return {
+                  "table": "b17_lvl_a_table_ioc",
+                  "indicator": f"b17.example.ioc.{suffix}",
+                  "confidence": 85,
+              }
+    - ref: create_table
+      action: core.table.create_table
+      depends_on: [make_name]
+      args:
+        name: ${{ ACTIONS.make_name.result.table }}
+        raise_on_duplicate: false
+        columns:
+          - { name: indicator, type: TEXT, nullable: false }
+          - { name: confidence, type: INTEGER, nullable: true }
+    - ref: insert_row
+      action: core.table.insert_row
+      depends_on: [create_table]
+      args:
+        table: ${{ ACTIONS.make_name.result.table }}
+        upsert: false
+        row_data:
+          indicator: ${{ ACTIONS.make_name.result.indicator }}
+          confidence: ${{ ACTIONS.make_name.result.confidence }}
+    - ref: lookup
+      action: core.table.lookup
+      depends_on: [insert_row]
+      args:
+        table: ${{ ACTIONS.make_name.result.table }}
+        column: indicator
+        value: ${{ ACTIONS.make_name.result.indicator }}
+    - ref: pack
+      action: core.transform.reshape
+      depends_on: [lookup]
+      args:
+        value:
+          plan: P-B17
+          level: lvl-a
+          topic: table
+          role: ioc-roundtrip
+          table: ${{ ACTIONS.make_name.result.table }}
+          looked_up: ${{ ACTIONS.lookup.result }}
+          ok: true
+  returns: ${{ ACTIONS.pack.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: make_name, x: 0, y: 120 }
+    - { ref: create_table, x: 0, y: 240 }
+    - { ref: insert_row, x: 0, y: 360 }
+    - { ref: lookup, x: 0, y: 480 }
+    - { ref: pack, x: 0, y: 600 }

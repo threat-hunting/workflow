@@ -1,0 +1,48 @@
+# P-B17 · lvl-a · meta · workflow create (lab pin) · COVERAGE-100 Wave META
+# Empty create first (lab may not accept definition_yaml the same way).
+type: workflow
+id: wf_b17LvlAMetaWfAuthor
+alias: b17-lvl-a-meta-wf-author
+definition:
+  title: "b17 · lvl-a · meta · wf-author"
+  description: >
+    P-B17 Wave META (lab pin). core.workflow.create_workflow only — other
+    authoring APIs absent from lab registry = EXCEPTION_LAB.
+    Org: B17 Lab · WS: b17-ctrl. SoT: COVERAGE-100.md · DO-02-104.
+  entrypoint:
+    ref: make_title
+  actions:
+    - ref: make_title
+      action: core.script.run_python
+      args:
+        allow_network: false
+        timeout_seconds: 15
+        inputs: {}
+        script: |
+          def main():
+              import time
+              return {"title": f"b17-meta-child-{int(time.time())}"}
+
+    - ref: create_child
+      action: core.workflow.create_workflow
+      depends_on: [make_title]
+      args:
+        title: ${{ ACTIONS.make_title.result.title }}
+        description: "P-B17 Wave META ephemeral child (empty scaffold)"
+
+    - ref: pack
+      action: core.transform.reshape
+      depends_on: [create_child]
+      args:
+        value:
+          wave: meta
+          role: wf-author
+          child_id: ${{ ACTIONS.create_child.result.id }}
+          child_title: ${{ ACTIONS.create_child.result.title }}
+  returns: ${{ ACTIONS.pack.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: make_title, x: 0, y: 120 }
+    - { ref: create_child, x: 0, y: 240 }
+    - { ref: pack, x: 0, y: 360 }

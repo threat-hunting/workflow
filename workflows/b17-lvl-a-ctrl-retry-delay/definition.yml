@@ -1,0 +1,40 @@
+# b17 · lvl-a · ctrl · retry-delay
+# legacy: wf_b17aL0RetryDelay01
+type: workflow
+id: wf_b17LvlACtrlRetryDelay
+alias: b17-lvl-a-ctrl-retry-delay
+definition:
+  title: "b17 · lvl-a · ctrl · retry-delay"
+  description: >
+    P-B17 product-test artifact. Level: lvl-a (machine). Topic: T-CTRL. Role: retry-delay. Retry / delay / mask. Org: B17 Lab · Workspace: b17-ctrl. Naming: docs/15-b17-product-test/01-naming-standard.md. Legacy folder: wf_b17aL0RetryDelay01.
+  entrypoint:
+    ref: seed
+  actions:
+    - ref: seed
+      action: core.transform.reshape
+      start_delay: 1
+      retry_policy:
+        max_attempts: 2
+        timeout: 30
+      args:
+        value: { secretish: "lab-value", n: 1 }
+    - ref: masked
+      action: core.transform.reshape
+      depends_on: [seed]
+      mask_output: true
+      args:
+        value: ${{ ACTIONS.seed.result }}
+    - ref: use_masked
+      action: core.transform.reshape
+      depends_on: [masked]
+      args:
+        value:
+          still_has_n: ${{ ACTIONS.masked.result.n }}
+          tag: B17A-L0-mask
+  returns: ${{ ACTIONS.use_masked.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: seed, x: 0, y: 120 }
+    - { ref: masked, x: 0, y: 240 }
+    - { ref: use_masked, x: 0, y: 360 }

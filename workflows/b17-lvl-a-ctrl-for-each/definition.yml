@@ -1,0 +1,66 @@
+# b17 · lvl-a · ctrl · for-each
+# legacy: wf_b17aL0ForEach01
+type: workflow
+id: wf_b17LvlACtrlForEach
+alias: b17-lvl-a-ctrl-for-each
+definition:
+  title: "b17 · lvl-a · ctrl · for-each"
+  description: >
+    P-B17 product-test artifact. Level: lvl-a (machine). Topic: T-CTRL. Role: for-each. for_each / run_if iteration. Org: B17 Lab · Workspace: b17-ctrl. Naming: docs/15-b17-product-test/01-naming-standard.md. Legacy folder: wf_b17aL0ForEach01.
+  entrypoint:
+    ref: seed
+  actions:
+    - ref: seed
+      action: core.transform.reshape
+      args:
+        value:
+          nums: [10, 20, 30]
+          flag: true
+    - ref: each_num
+      action: core.transform.reshape
+      depends_on: [seed]
+      for_each: ${{ for var.n in ACTIONS.seed.result.nums }}
+      args:
+        value:
+          item: ${{ var.n }}
+          tag: B17A-L0-foreach
+    - ref: when_true
+      action: core.transform.reshape
+      depends_on: [seed]
+      run_if: ${{ ACTIONS.seed.result.flag }}
+      args:
+        value: { branch: "true_path", ok: true }
+    - ref: when_false
+      action: core.transform.reshape
+      depends_on: [seed]
+      run_if: ${{ not ACTIONS.seed.result.flag }}
+      args:
+        value: { branch: "false_path", ok: false }
+    - ref: pack
+      action: core.transform.reshape
+      depends_on: [each_num, when_true]
+      args:
+        value:
+          each: ${{ ACTIONS.each_num.result }}
+          true_branch: ${{ ACTIONS.when_true.result }}
+  returns: ${{ ACTIONS.pack.result }}
+layout:
+  trigger:
+    x: 0
+    y: 0
+  actions:
+    - ref: seed
+      x: 0
+      y: 120
+    - ref: each_num
+      x: 0
+      y: 240
+    - ref: when_true
+      x: 200
+      y: 240
+    - ref: when_false
+      x: 400
+      y: 240
+    - ref: pack
+      x: 0
+      y: 360

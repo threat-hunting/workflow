@@ -1,0 +1,167 @@
+# P-B17 · lvl-b · topic hitl-int · role=gate2 (second confirm)
+# COVERAGE-100 Wave HITL-max · Case-trigger panel: intentionally OFF
+# Pair: after gate1 approve/deny · Org: B17 Lab · WS: b17-hitl-int
+type: workflow
+id: wf_b17LvlBHitlIntGate2
+alias: b17-lvl-b-hitl-int-gate2
+definition:
+  title: "b17 · lvl-b · hitl-int · gate2 · needs-trigger"
+  description: >
+    P-B17 HITL-max second Gate. Run after primary gate decision on the same Case.
+    Accepts TRIGGER.decision+case_id (M1/M2) or comment+select (M3).
+    Tags: hitl-int-gate2-approved|denied · via hitl-int-via-*.
+    Case-trigger UI stays OFF. Org: B17 Lab · Workspace: b17-hitl-int.
+  entrypoint:
+    ref: normalize
+    expects: {}
+  actions:
+    - ref: normalize
+      action: core.script.run_python
+      args:
+        allow_network: false
+        timeout_seconds: 30
+        inputs:
+          decision: ${{ TRIGGER.decision }}
+          case_id: ${{ TRIGGER.case_id }}
+          comment: ${{ TRIGGER.comment }}
+          text: ${{ TRIGGER.text }}
+        script: |
+          def main(decision, case_id, comment, text):
+              raw = ""
+              source = "empty"
+              for label, val in (
+                  ("decision", decision),
+                  ("comment", comment),
+                  ("text", text),
+              ):
+                  if val is None:
+                      continue
+                  s = str(val).strip()
+                  if s:
+                      raw = s
+                      source = label
+                      break
+              token = raw.split()[0].lower() if raw else ""
+              if token in ("approve", "approved", "yes", "ok"):
+                  d = "approve"
+              elif token in ("deny", "denied", "reject", "no"):
+                  d = "deny"
+              else:
+                  d = "invalid"
+              via = "case-comment" if source in ("comment", "text") else (
+                  "manual-or-webhook" if source == "decision" else "unknown"
+              )
+              via_tag = (
+                  "hitl-int-via-comment" if via == "case-comment" else "hitl-int-via-api"
+              )
+              result_tag = (
+                  "hitl-int-gate2-approved" if d == "approve"
+                  else "hitl-int-gate2-denied" if d == "deny"
+                  else "hitl-int-gate2-invalid"
+              )
+              audit = f"P-B17 T-HITL-INT GATE2 DECISION={d} via={via} raw={raw!r}"
+              return {
+                  "decision": d,
+                  "case_id": str(case_id or "").strip(),
+                  "via": via,
+                  "via_tag": via_tag,
+                  "result_tag": result_tag,
+                  "audit": audit,
+              }
+    - ref: require_valid
+      action: core.require
+      depends_on: [normalize]
+      args:
+        conditions: ${{ FN.contains(ACTIONS.normalize.result.decision, ["approve", "deny"]) }}
+        require_all: true
+        raise_error: true
+    - ref: require_case
+      action: core.require
+      depends_on: [normalize, require_valid]
+      args:
+        conditions: ${{ FN.length(ACTIONS.normalize.result.case_id) > 0 }}
+        require_all: true
+        raise_error: true
+    - ref: ensure_topic
+      action: core.cases.add_case_tag
+      depends_on: [require_case]
+      args:
+        case_id: ${{ ACTIONS.normalize.result.case_id }}
+        tag: topic-hitl-int
+        create_if_missing: true
+    - ref: add_result_tag
+      action: core.cases.add_case_tag
+      depends_on: [ensure_topic]
+      args:
+        case_id: ${{ ACTIONS.normalize.result.case_id }}
+        tag: ${{ ACTIONS.normalize.result.result_tag }}
+        create_if_missing: true
+    - ref: add_via_tag
+      action: core.cases.add_case_tag
+      depends_on: [ensure_topic]
+      args:
+        case_id: ${{ ACTIONS.normalize.result.case_id }}
+        tag: ${{ ACTIONS.normalize.result.via_tag }}
+        create_if_missing: true
+    - ref: on_approve
+      action: core.cases.update_case
+      depends_on: [add_result_tag, add_via_tag]
+      join_strategy: all
+      run_if: ${{ FN.is_equal(ACTIONS.normalize.result.decision, "approve") }}
+      args:
+        case_id: ${{ ACTIONS.normalize.result.case_id }}
+        status: resolved
+        description: "P-B17 hitl-int GATE2 APPROVED (second confirm)"
+    - ref: sensitive
+      action: core.transform.reshape
+      depends_on: [on_approve]
+      run_if: ${{ FN.is_equal(ACTIONS.normalize.result.decision, "approve") }}
+      args:
+        value:
+          executed: true
+          stage: gate2
+          action: sensitive-lab-step-stage2
+          case_id: ${{ ACTIONS.normalize.result.case_id }}
+    - ref: on_deny
+      action: core.cases.update_case
+      depends_on: [add_result_tag, add_via_tag]
+      join_strategy: all
+      run_if: ${{ FN.is_equal(ACTIONS.normalize.result.decision, "deny") }}
+      args:
+        case_id: ${{ ACTIONS.normalize.result.case_id }}
+        status: closed
+        description: "P-B17 hitl-int GATE2 DENIED (second confirm)"
+    - ref: audit_comment
+      action: core.cases.create_comment
+      depends_on: [on_approve, on_deny, sensitive]
+      join_strategy: any
+      args:
+        case_id: ${{ ACTIONS.normalize.result.case_id }}
+        content: ${{ ACTIONS.normalize.result.audit }}
+    - ref: pack
+      action: core.transform.reshape
+      depends_on: [audit_comment]
+      args:
+        value:
+          plan: P-B17
+          level: lvl-b
+          topic: hitl-int
+          role: gate2
+          decision: ${{ ACTIONS.normalize.result.decision }}
+          case_id: ${{ ACTIONS.normalize.result.case_id }}
+          result_tag: ${{ ACTIONS.normalize.result.result_tag }}
+  returns: ${{ ACTIONS.pack.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: normalize, x: 0, y: 120 }
+    - { ref: require_valid, x: 0, y: 240 }
+    - { ref: require_case, x: 0, y: 360 }
+    - { ref: ensure_topic, x: 0, y: 480 }
+    - { ref: add_result_tag, x: -120, y: 600 }
+    - { ref: add_via_tag, x: 120, y: 600 }
+    - { ref: on_approve, x: -120, y: 720 }
+    - { ref: sensitive, x: -120, y: 840 }
+    - { ref: on_deny, x: 120, y: 720 }
+    - { ref: audit_comment, x: 0, y: 960 }
+    - { ref: pack, x: 0, y: 1080 }

@@ -1,0 +1,42 @@
+# b17 · lvl-a · ctrl · dedupe
+# legacy: wf_b17aL0Dedupe01
+type: workflow
+id: wf_b17LvlACtrlDedupe
+alias: b17-lvl-a-ctrl-dedupe
+definition:
+  title: "b17 · lvl-a · ctrl · dedupe"
+  description: >
+    P-B17 product-test artifact. Level: lvl-a (machine). Topic: T-CTRL. Role: dedupe. Dedupe action. Org: B17 Lab · Workspace: b17-ctrl. Naming: docs/15-b17-product-test/01-naming-standard.md. Legacy folder: wf_b17aL0Dedupe01.
+  entrypoint:
+    ref: seed
+  actions:
+    - ref: seed
+      action: core.transform.reshape
+      args:
+        value:
+          items:
+            - { finding_id: "f1", sev: high }
+            - { finding_id: "f1", sev: high }
+            - { finding_id: "f2", sev: low }
+    - ref: deduped
+      action: core.transform.deduplicate
+      depends_on: [seed]
+      args:
+        items: ${{ ACTIONS.seed.result.items }}
+        keys: [finding_id]
+        persist: false
+        expire_seconds: 60
+    - ref: pack
+      action: core.transform.reshape
+      depends_on: [deduped]
+      args:
+        value:
+          count: ${{ FN.length(ACTIONS.deduped.result) }}
+          tag: B17A-L0-dedupe
+  returns: ${{ ACTIONS.pack.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: seed, x: 0, y: 120 }
+    - { ref: deduped, x: 0, y: 240 }
+    - { ref: pack, x: 0, y: 360 }

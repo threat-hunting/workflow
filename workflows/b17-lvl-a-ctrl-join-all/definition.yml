@@ -1,0 +1,52 @@
+# b17 · lvl-a · ctrl · join-all
+# legacy: wf_b17aL0Join01
+type: workflow
+id: wf_b17LvlACtrlJoinAll
+alias: b17-lvl-a-ctrl-join-all
+definition:
+  title: "b17 · lvl-a · ctrl · join-all"
+  description: >
+    P-B17 product-test artifact. Level: lvl-a (machine). Topic: T-CTRL. Role: join-all. Join strategy all. Org: B17 Lab · Workspace: b17-ctrl. Naming: docs/15-b17-product-test/01-naming-standard.md. Legacy folder: wf_b17aL0Join01.
+  entrypoint:
+    ref: start
+  actions:
+    - ref: start
+      action: core.transform.reshape
+      args:
+        value:
+          a: branch-a
+          b: branch-b
+    - ref: branch_a
+      action: core.transform.reshape
+      depends_on: [start]
+      join_strategy: all
+      args:
+        value:
+          status: ok-a
+          from: ${{ ACTIONS.start.result.a }}
+    - ref: branch_b
+      action: core.transform.reshape
+      depends_on: [start]
+      join_strategy: all
+      args:
+        value:
+          status: ok-b
+          from: ${{ ACTIONS.start.result.b }}
+    - ref: joined
+      action: core.transform.reshape
+      depends_on: [branch_a, branch_b]
+      join_strategy: all
+      args:
+        value:
+          a_status: ${{ ACTIONS.branch_a.result.status }}
+          b_status: ${{ ACTIONS.branch_b.result.status }}
+          joined: true
+          tag: B17A-L0-join-all
+  returns: ${{ ACTIONS.joined.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: start, x: 0, y: 120 }
+    - { ref: branch_a, x: -120, y: 240 }
+    - { ref: branch_b, x: 120, y: 240 }
+    - { ref: joined, x: 0, y: 360 }

@@ -1,0 +1,17 @@
+# Legacy L0 rename map
+
+- `wf_b17aL0Scatter01` → `b17-lvl-a-ctrl-scatter` (alias `b17-lvl-a-ctrl-scatter`)
+- `wf_b17aL0ForEach01` → `b17-lvl-a-ctrl-for-each` (alias `b17-lvl-a-ctrl-for-each`)
+- `wf_b17aL0MapApply01` → `b17-lvl-a-ctrl-map-apply` (alias `b17-lvl-a-ctrl-map-apply`)
+- `wf_b17aL0Loop01` → `b17-lvl-a-ctrl-loop` (alias `b17-lvl-a-ctrl-loop`)
+- `wf_b17aL0Join01` → `b17-lvl-a-ctrl-join-all` (alias `b17-lvl-a-ctrl-join-all`)
+- `wf_b17aL0JoinAny01` → `b17-lvl-a-ctrl-join-any` (alias `b17-lvl-a-ctrl-join-any`)
+- `wf_b17aL0ErrorPath01` → `b17-lvl-a-ctrl-error-path` (alias `b17-lvl-a-ctrl-error-path`)
+- `wf_b17aL0SuccessEdge01` → `b17-lvl-a-ctrl-success-edge` (alias `b17-lvl-a-ctrl-success-edge`)
+- `wf_b17aL0RetryDelay01` → `b17-lvl-a-ctrl-retry-delay` (alias `b17-lvl-a-ctrl-retry-delay`)
+- `wf_b17aL0Dedupe01` → `b17-lvl-a-ctrl-dedupe` (alias `b17-lvl-a-ctrl-dedupe`)
+- `wf_b17aL0Subflow01` → `b17-lvl-a-ctrl-subflow` (alias `b17-lvl-a-ctrl-subflow`)
+- `wf_b17aL0SubChild01` → `b17-lvl-a-ctrl-sub-child` (alias `b17-lvl-a-ctrl-sub-child`)
+- `wf_b17aL0IsDup01` → `b17-lvl-a-ctrl-is-dup` (alias `b17-lvl-a-ctrl-is-dup`)
+- `wf_b17aL0HighCov01` → `b17-lvl-a-ctrl-high-cov` (alias `b17-lvl-a-ctrl-high-cov`)
+- `wf_b17aL0Webhook01` → `b17-lvl-a-trig-webhook` (alias `b17-lvl-a-trig-webhook`)
