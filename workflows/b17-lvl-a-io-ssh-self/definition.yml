@@ -1,0 +1,59 @@
+# P-B17 · lvl-a · topic io · role=l4-ssh-self-safe
+# Target: self host 192.168.11.116 (B17 ephemeral) — read info + write /tmp/b17-l4-ssh-safe/sample.txt only
+# Secret: org `ssh` (PRIVATE_KEY) · DO-03-001 path secrets/b17-lab-ssh/ (value not in wiki)
+type: workflow
+id: wf_b17LvlAIoSshSelf
+alias: b17-lvl-a-io-ssh-self
+definition:
+  title: "b17 · lvl-a · io · ssh-self"
+  description: >
+    P-B17 L4 SSH live (partial). Level: lvl-a. Topic: T-IO / L4.
+    core.ssh.execute_command against self host 192.168.11.116 as mghanbari.
+    Read-only host info, then write marker only under /tmp/b17-l4-ssh-safe/sample.txt.
+    Org: B17 Lab · Workspace: b17-io. SMTP still HOLD.
+  entrypoint:
+    ref: read_info
+  actions:
+    - ref: read_info
+      action: core.ssh.execute_command
+      args:
+        host: "192.168.11.116"
+        port: 22
+        username: mghanbari
+        host_key_checking: true
+        host_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICJZtLk/Qojyj8ezQwDSbS771mTnW4VbrfXIu5uTHRFu"
+        timeout_seconds: 45
+        command: >-
+          uname -a; hostname; whoami; id -un; date -u +%Y-%m-%dT%H:%M:%SZ
+    - ref: write_safe
+      action: core.ssh.execute_command
+      depends_on: [read_info]
+      args:
+        host: "192.168.11.116"
+        port: 22
+        username: mghanbari
+        host_key_checking: true
+        host_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICJZtLk/Qojyj8ezQwDSbS771mTnW4VbrfXIu5uTHRFu"
+        timeout_seconds: 45
+        command: >-
+          mkdir -p /tmp/b17-l4-ssh-safe
+          && printf 'B17-L4-SSH-OK\n' > /tmp/b17-l4-ssh-safe/sample.txt
+          && cat /tmp/b17-l4-ssh-safe/sample.txt
+    - ref: pack
+      action: core.transform.reshape
+      depends_on: [write_safe]
+      args:
+        value:
+          plan: P-B17
+          level: lvl-a
+          topic: io
+          role: l4-ssh-self-safe
+          read: ${{ ACTIONS.read_info.result }}
+          write: ${{ ACTIONS.write_safe.result }}
+  returns: ${{ ACTIONS.pack.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: read_info, x: 0, y: 120 }
+    - { ref: write_safe, x: 0, y: 240 }
+    - { ref: pack, x: 0, y: 360 }
