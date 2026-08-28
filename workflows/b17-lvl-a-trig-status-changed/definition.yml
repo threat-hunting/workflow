@@ -2,7 +2,7 @@
 # Case-trigger panel: ON (event_types=status_changed)
 # Naming: docs/15-b17-product-test/01-naming-standard.md · DO-02-093 · DO-02-097
 type: workflow
-id: wf_b17LvlATrigStatusChanged
+id: wf_1ywKljCPDLVojkhTDxG3dw
 alias: b17-lvl-a-trig-status-changed
 definition:
   title: "b17 · lvl-a · trig · status-changed · needs-trigger"
