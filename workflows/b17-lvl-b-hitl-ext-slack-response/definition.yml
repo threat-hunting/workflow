@@ -1,7 +1,7 @@
 # P-B17 · lvl-b · topic hitl-ext · role=slack-response (HOLD until Slack secret)
 # Naming: docs/15-b17-product-test/01-naming-standard.md · future deps DO-02-090
 type: workflow
-id: wf_b17LvlBHitlExtSlackResponse
+id: wf_4kRvcbypVLh4NLacfn35xC
 alias: b17-lvl-b-hitl-ext-slack-response
 definition:
   title: "b17 · lvl-b · hitl-ext · slack-response"
