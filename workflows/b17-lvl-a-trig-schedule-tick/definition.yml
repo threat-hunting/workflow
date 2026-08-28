@@ -2,7 +2,7 @@
 # Schedule itself is created via API (POST /schedules) — see runner / DO-02-099
 # Naming: docs/15-b17-product-test/01-naming-standard.md
 type: workflow
-id: wf_b17LvlATrigScheduleTick
+id: wf_5dCs3LiNMeUqIkocGqgW8u
 alias: b17-lvl-a-trig-schedule-tick
 definition:
   title: "b17 · lvl-a · trig · schedule-tick"
