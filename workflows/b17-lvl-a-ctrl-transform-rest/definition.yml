@@ -3,7 +3,7 @@
 # get_status: Temporal detach does not return wf_exec_id in action result —
 # runner injects TRIGGER.sample_wf_exec_id from a live sub-child execution.
 type: workflow
-id: wf_b17LvlACtrlTransformRest
+id: wf_3zhR6PvSJREDaJNFFvMWsh
 alias: b17-lvl-a-ctrl-transform-rest
 definition:
   title: "b17 · lvl-a · ctrl · transform-rest"

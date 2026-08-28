@@ -2,7 +2,7 @@
 # Case-trigger panel: ON (event_types=comment_created)
 # Naming: docs/15-b17-product-test/01-naming-standard.md · DO-02-093 · COVERAGE-100
 type: workflow
-id: wf_b17LvlATrigCommentCreated
+id: wf_2uJ0PXCwxa674U8VxeZzeu
 alias: b17-lvl-a-trig-comment-created
 definition:
   title: "b17 · lvl-a · trig · comment-created · needs-trigger"

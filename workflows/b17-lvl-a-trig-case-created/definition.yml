@@ -4,7 +4,7 @@
 # transaction — filter topic-trig inside the workflow (get_case). See DO-02-093.
 # Naming: docs/15-b17-product-test/01-naming-standard.md
 type: workflow
-id: wf_b17LvlATrigCaseCreated
+id: wf_1xkQEMbgZbqwekrfCI1V0q
 alias: b17-lvl-a-trig-case-created
 definition:
   title: "b17 · lvl-a · trig · case-created · needs-trigger"

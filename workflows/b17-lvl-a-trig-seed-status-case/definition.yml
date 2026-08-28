@@ -1,7 +1,7 @@
 # P-B17 · lvl-a · topic trig · role=seed-case-for-status (standalone)
 # Creates Case with topic-trig so status_changed handler can match after PATCH status
 type: workflow
-id: wf_b17LvlATrigSeedStatusCase
+id: wf_1UqdFOvdn7vdmTFVeBCal3
 alias: b17-lvl-a-trig-seed-status-case
 definition:
   title: "b17 · lvl-a · trig · seed-status-case"
