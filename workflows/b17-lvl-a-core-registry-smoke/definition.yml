@@ -1,0 +1,43 @@
+# P-B17 · lvl-a · topic reg/core · role=core-registry-smoke
+# Uses only built-in kopal_registry core actions; no custom registry or secret.
+type: workflow
+id: wf_b17LvlACoreRegistrySmoke
+alias: b17-lvl-a-core-registry-smoke
+definition:
+  title: "b17 · lvl-a · reg · core registry smoke"
+  description: >
+    P-B17 deterministic smoke for the built-in kopal_registry core action
+    surface. Exercises core.transform.reshape and core.require without
+    network access, credentials, or external writes.
+  entrypoint:
+    ref: seed
+  actions:
+    - ref: seed
+      action: core.transform.reshape
+      args:
+        value:
+          source_registry: kopal_registry
+          marker: B17-CORE-REGISTRY-OK
+          items: [1, 2, 3]
+    - ref: gate
+      action: core.require
+      depends_on: [seed]
+      args:
+        conditions: true
+        require_all: true
+        raise_error: true
+    - ref: pack
+      action: core.transform.reshape
+      depends_on: [gate]
+      args:
+        value:
+          marker: ${{ ACTIONS.seed.result.marker }}
+          core_gate: ${{ ACTIONS.gate.result }}
+          items: ${{ ACTIONS.seed.result.items }}
+  returns: ${{ ACTIONS.pack.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: seed, x: 0, y: 120 }
+    - { ref: gate, x: 0, y: 240 }
+    - { ref: pack, x: 0, y: 360 }
