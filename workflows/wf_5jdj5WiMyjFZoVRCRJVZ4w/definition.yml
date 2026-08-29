@@ -1,0 +1,28 @@
+id: wf_5jdj5WiMyjFZoVRCRJVZ4w
+tags: []
+schedules: []
+webhook:
+  methods:
+  - POST
+  status: offline
+  include_headers: false
+definition:
+  title: e2e-runtime-smoke-20260829-1787992323536
+  description: Disposable non-production runtime smoke; no cleanup.
+  entrypoint:
+    expects: {}
+  config:
+    environment: default
+    timeout: 0.0
+  actions:
+  - ref: e2e_check_account_status
+    action: integrations.soclib.ad.check_account_status
+    args:
+      user: e2e-smoke-user
+    depends_on: []
+    retry_policy:
+      max_attempts: 1
+      timeout: 300
+    start_delay: 0.0
+    join_strategy: all
+    mask_output: false
