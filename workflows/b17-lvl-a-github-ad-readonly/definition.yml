@@ -1,0 +1,34 @@
+# P-B17 · lvl-a · topic reg/ldap · role=github-ad-readonly
+# Source: GitHub custom integration repository; credential is resolved by Kopal.
+type: workflow
+id: wf_b17LvlAGitHubAdReadonly
+alias: b17-lvl-a-github-ad-readonly
+definition:
+  title: "b17 · lvl-a · reg · GitHub AD read-only"
+  description: >
+    P-B17 read-only Active Directory smoke. Calls
+    tools.soclib.ad.test_connectivity from the GitHub repository
+    threat-hunting/kopal-integrations using the existing
+    soclib_active_directory secret (the established LDAP configuration).
+    No directory mutation and no credential values in this definition.
+  entrypoint:
+    ref: ad_probe
+  actions:
+    - ref: ad_probe
+      action: tools.soclib.ad.test_connectivity
+      args: {}
+    - ref: pack
+      action: core.transform.reshape
+      depends_on: [ad_probe]
+      args:
+        value:
+          source_registry: "git+ssh://git@github.com/threat-hunting/kopal-integrations.git"
+          action: tools.soclib.ad.test_connectivity
+          credential: soclib_active_directory
+          result: ${{ ACTIONS.ad_probe.result }}
+  returns: ${{ ACTIONS.pack.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: ad_probe, x: 0, y: 120 }
+    - { ref: pack, x: 0, y: 240 }
