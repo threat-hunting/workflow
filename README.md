@@ -18,3 +18,12 @@ Workflowهای **تست موج B17** (نه برای مشتری؛ قابل wipe �
 **Repeatable path until HOLD_PRODUCT (GitHub App git pull) lifts:** push YAML here → import via API multipart (`POST .../workflows` with `file`) or MCP `create_workflow` with the same definition envelope. Do not claim Git sync green while HOLD_PRODUCT stands.
 
 **Promote:** `*-testidea` → `*-b17` → operational `kopal-workflows`.
+
+## GitHub integration and built-in registry smoke pack
+
+The read-only integration workflow definitions are documented in
+[`INTEGRATION-WORKFLOWS.md`](INTEGRATION-WORKFLOWS.md). They cover the GitHub
+`threat-hunting/kopal-integrations` source (`tools.b17_lab.*` and
+`tools.soclib.*`) and the built-in `kopal_registry` `core.*` actions without
+embedding credentials. Run the deterministic core smoke before the LDAP or
+Splunk probes.
