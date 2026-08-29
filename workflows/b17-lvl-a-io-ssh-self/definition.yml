@@ -1,5 +1,5 @@
 # P-B17 · lvl-a · topic io · role=l4-ssh-self-safe
-# Target: self host 192.168.11.116 (B17 ephemeral) — read info + write /tmp/b17-l4-ssh-safe/sample.txt only
+# Target: self host 10.10.71.116 (b17.securepath.local, B17) — read info + write /tmp/b17-l4-ssh-safe/sample.txt only
 # Secret: org `ssh` (PRIVATE_KEY) · DO-03-001 path secrets/b17-lab-ssh/ (value not in wiki)
 type: workflow
 id: wf_b17LvlAIoSshSelf
@@ -8,7 +8,7 @@ definition:
   title: "b17 · lvl-a · io · ssh-self"
   description: >
     P-B17 L4 SSH live (partial). Level: lvl-a. Topic: T-IO / L4.
-    core.ssh.execute_command against self host 192.168.11.116 as mghanbari.
+    core.ssh.execute_command against self host 10.10.71.116 (b17.securepath.local) as mghanbari.
     Read-only host info, then write marker only under /tmp/b17-l4-ssh-safe/sample.txt.
     Org: B17 Lab · Workspace: b17-io. SMTP still HOLD.
   entrypoint:
@@ -17,7 +17,7 @@ definition:
     - ref: read_info
       action: core.ssh.execute_command
       args:
-        host: "192.168.11.116"
+        host: "10.10.71.116"
         port: 22
         username: mghanbari
         host_key_checking: true
@@ -29,7 +29,7 @@ definition:
       action: core.ssh.execute_command
       depends_on: [read_info]
       args:
-        host: "192.168.11.116"
+        host: "10.10.71.116"
         port: 22
         username: mghanbari
         host_key_checking: true
