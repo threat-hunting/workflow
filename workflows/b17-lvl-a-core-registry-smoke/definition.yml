@@ -1,7 +1,7 @@
 # P-B17 · lvl-a · topic reg/core · role=core-registry-smoke
 # Uses only built-in kopal_registry core actions; no custom registry or secret.
 type: workflow
-id: wf_b17LvlACoreRegistrySmoke
+id: wf_b17LvlACoreSmoke
 alias: b17-lvl-a-core-registry-smoke
 definition:
   title: "b17 · lvl-a · reg · core registry smoke"

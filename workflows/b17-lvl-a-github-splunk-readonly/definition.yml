@@ -1,7 +1,7 @@
 # P-B17 · lvl-a · topic reg/splunk · role=github-splunk-readonly
 # Source: GitHub custom integration repository; credential is resolved by Kopal.
 type: workflow
-id: wf_b17LvlAGitHubSplunkReadonly
+id: wf_b17LvlAGhSplunkRO
 alias: b17-lvl-a-github-splunk-readonly
 definition:
   title: "b17 · lvl-a · reg · GitHub Splunk read-only"
