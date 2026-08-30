@@ -1,7 +1,7 @@
 # P-B17 · lvl-a · topic ctrl · role=transform-rest (standalone)
-# Covers remaining transform + workflow.get_status (COVERAGE-100 Wave T0)
-# get_status: Temporal detach does not return wf_exec_id in action result —
-# runner injects TRIGGER.sample_wf_exec_id from a live sub-child execution.
+# Covers remaining transform + workflow.get_status (COVERAGE-100 Wave T0).
+# get_status is exercised against a child execution created by this workflow,
+# so a manual run does not depend on runner-injected trigger fields.
 type: workflow
 id: wf_3zhR6PvSJREDaJNFFvMWsh
 alias: b17-lvl-a-ctrl-transform-rest
@@ -9,7 +9,8 @@ definition:
   title: "b17 · lvl-a · ctrl · transform-rest"
   description: >
     P-B17 coverage pack Wave T0. Exercises remaining core.transform.*
-    (flatten_json, eval_jsonpaths, is_in, not_in) and core.workflow.get_status.
+    (flatten_json, eval_jsonpaths, is_in, not_in) and core.workflow.get_status
+    against an isolated child execution.
     Org: B17 Lab · Workspace: b17-ctrl. SoT: COVERAGE-100.md · DO-02-104.
   entrypoint:
     ref: seed
@@ -23,7 +24,6 @@ definition:
             network: { source: { ip: "192.0.2.10" } }
           items: ["alpha", "beta", "gamma", "omega"]
           known: ["alpha", "beta", "gamma"]
-          sample_wf_exec_id: ${{ TRIGGER.sample_wf_exec_id }}
     - ref: flat
       action: core.transform.flatten_json
       depends_on: [seed]
@@ -49,11 +49,21 @@ definition:
       args:
         items: ${{ ACTIONS.seed.result.items }}
         collection: ${{ ACTIONS.seed.result.known }}
-    - ref: status
-      action: core.workflow.get_status
+    - ref: launch
+      action: core.workflow.execute
       depends_on: [flat, paths, is_in, not_in]
       args:
-        wf_exec_id: ${{ ACTIONS.seed.result.sample_wf_exec_id }}
+        workflow_alias: b17-lvl-a-ctrl-sub-child
+        trigger_inputs: {}
+        wait_strategy: wait
+        timeout: 60
+        loop_strategy: sequential
+        fail_strategy: isolated
+    - ref: status
+      action: core.workflow.get_status
+      depends_on: [flat, paths, is_in, not_in, launch]
+      args:
+        wf_exec_id: ${{ ACTIONS.launch.result.wf_exec_id }}
     - ref: pack
       action: core.transform.reshape
       depends_on: [status]
@@ -65,6 +75,7 @@ definition:
           paths: ${{ ACTIONS.paths.result }}
           is_in: ${{ ACTIONS.is_in.result }}
           not_in: ${{ ACTIONS.not_in.result }}
+          child_execution: ${{ ACTIONS.launch.result.wf_exec_id }}
           child_status: ${{ ACTIONS.status.result }}
           ok: true
   returns: ${{ ACTIONS.pack.result }}
@@ -76,5 +87,6 @@ layout:
     - { ref: paths, x: 0, y: 360 }
     - { ref: is_in, x: 0, y: 480 }
     - { ref: not_in, x: 0, y: 600 }
-    - { ref: status, x: 0, y: 720 }
-    - { ref: pack, x: 0, y: 840 }
+    - { ref: launch, x: 0, y: 720 }
+    - { ref: status, x: 0, y: 840 }
+    - { ref: pack, x: 0, y: 960 }
