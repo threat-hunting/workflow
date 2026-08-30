@@ -2,7 +2,7 @@
 # Source: GitHub custom integration repository (remote registry only).
 # The final pack step deliberately uses an internal core action as well.
 type: workflow
-id: wf_b17LvlAGitHubRegistryPing
+id: wf_b17LvlAGhPing
 alias: b17-lvl-a-github-registry-ping
 definition:
   title: "b17 · lvl-a · reg · GitHub ping"
