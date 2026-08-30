@@ -1,7 +1,7 @@
 # P-B17 · lvl-a · topic reg/ldap · role=github-ad-readonly
 # Source: GitHub custom integration repository; credential is resolved by Kopal.
 type: workflow
-id: wf_b17LvlAGitHubAdReadonly
+id: wf_b17LvlAGhADRO
 alias: b17-lvl-a-github-ad-readonly
 definition:
   title: "b17 · lvl-a · reg · GitHub AD read-only"
