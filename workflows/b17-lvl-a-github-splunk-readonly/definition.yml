@@ -1,0 +1,33 @@
+# P-B17 · lvl-a · topic reg/splunk · role=github-splunk-readonly
+# Source: GitHub custom integration repository; credential is resolved by Kopal.
+type: workflow
+id: wf_b17LvlAGitHubSplunkReadonly
+alias: b17-lvl-a-github-splunk-readonly
+definition:
+  title: "b17 · lvl-a · reg · GitHub Splunk read-only"
+  description: >
+    P-B17 read-only Splunk Enterprise Security connectivity smoke. Calls
+    tools.soclib.splunkes.test_connectivity from the GitHub repository
+    threat-hunting/kopal-integrations using the existing soclib_splunk_es
+    secret. It performs no event, finding, investigation, or note writes.
+  entrypoint:
+    ref: splunk_probe
+  actions:
+    - ref: splunk_probe
+      action: tools.soclib.splunkes.test_connectivity
+      args: {}
+    - ref: pack
+      action: core.transform.reshape
+      depends_on: [splunk_probe]
+      args:
+        value:
+          source_registry: "git+ssh://git@github.com/threat-hunting/kopal-integrations.git"
+          action: tools.soclib.splunkes.test_connectivity
+          credential: soclib_splunk_es
+          result: ${{ ACTIONS.splunk_probe.result }}
+  returns: ${{ ACTIONS.pack.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: splunk_probe, x: 0, y: 120 }
+    - { ref: pack, x: 0, y: 240 }

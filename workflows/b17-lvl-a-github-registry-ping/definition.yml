@@ -1,0 +1,34 @@
+# P-B17 · lvl-a · topic reg · role=github-registry-ping
+# Source: GitHub custom integration repository (remote registry only).
+# The final pack step deliberately uses an internal core action as well.
+type: workflow
+id: wf_b17LvlAGitHubRegistryPing
+alias: b17-lvl-a-github-registry-ping
+definition:
+  title: "b17 · lvl-a · reg · GitHub ping"
+  description: >
+    P-B17 read-only registry smoke. Calls tools.b17_lab.ping from the GitHub
+    repository threat-hunting/kopal-integrations, then normalizes the result
+    with the built-in kopal_registry core.transform.reshape action.
+    RUN MODE: standalone. No secrets or external writes.
+  entrypoint:
+    ref: ping
+  actions:
+    - ref: ping
+      action: tools.b17_lab.ping
+      args:
+        message: "B17 GitHub integration ping"
+    - ref: pack
+      action: core.transform.reshape
+      depends_on: [ping]
+      args:
+        value:
+          source_registry: "git+ssh://git@github.com/threat-hunting/kopal-integrations.git"
+          action: tools.b17_lab.ping
+          result: ${{ ACTIONS.ping.result }}
+  returns: ${{ ACTIONS.pack.result }}
+layout:
+  trigger: { x: 0, y: 0 }
+  actions:
+    - { ref: ping, x: 0, y: 120 }
+    - { ref: pack, x: 0, y: 240 }
