@@ -55,7 +55,9 @@ definition:
       args:
         workflow_alias: b17-lvl-a-ctrl-sub-child
         trigger_inputs: {}
-        wait_strategy: wait
+        # Detach returns the canonical wf_id/exec_id handle so get_status can
+        # inspect the child without depending on a runner-injected trigger.
+        wait_strategy: detach
         timeout: 60
         loop_strategy: sequential
         fail_strategy: isolated
@@ -63,7 +65,7 @@ definition:
       action: core.workflow.get_status
       depends_on: [flat, paths, is_in, not_in, launch]
       args:
-        wf_exec_id: ${{ ACTIONS.launch.result.wf_exec_id }}
+        wf_exec_id: ${{ ACTIONS.launch.result }}
     - ref: pack
       action: core.transform.reshape
       depends_on: [status]
@@ -75,7 +77,7 @@ definition:
           paths: ${{ ACTIONS.paths.result }}
           is_in: ${{ ACTIONS.is_in.result }}
           not_in: ${{ ACTIONS.not_in.result }}
-          child_execution: ${{ ACTIONS.launch.result.wf_exec_id }}
+          child_execution: ${{ ACTIONS.launch.result }}
           child_status: ${{ ACTIONS.status.result }}
           ok: true
   returns: ${{ ACTIONS.pack.result }}
