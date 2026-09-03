@@ -1,0 +1,33 @@
+id: wf_0DL07L9seCHwrrNIqXgO8r
+alias: b17c-ai-ad-identity-verification
+tags: []
+schedules: []
+webhook:
+  methods:
+  - POST
+  status: offline
+  include_headers: false
+definition:
+  title: B17C AI AD Identity Verification
+  description: Read-only synthetic AD identity lookup with AI field selection; no
+    external writes.
+  entrypoint:
+    expects: {}
+  config:
+    environment: default
+    timeout: 0.0
+  actions:
+  - ref: ad_get_attributes
+    action: integrations.soclib.ad.get_attributes
+    args:
+      attributes: sAMAccountName;userPrincipalName;department
+      principals: sp-agentic-os@iam.securepath.local
+      attribute_preset: security
+    depends_on: []
+    retry_policy:
+      max_attempts: 1
+      timeout: 300
+    start_delay: 0.0
+    join_strategy: all
+    mask_output: false
+  returns: {}
